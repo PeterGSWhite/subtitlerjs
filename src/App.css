@@ -13,6 +13,21 @@
   transform: none;
 }
 
+.options {
+  background-color: black;
+  color: white;
+  position: fixed;
+  width: 25%;
+  height: 3.5em;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.subtitles-list {
+ margin-top: 3.5em;
+}
+
 .subtitles {
   position:fixed;
   top: 0;
@@ -40,7 +55,7 @@
  align-items: center;
 }
 
-.subtitle-options .subtitle-text .subtitle-play{
+.subtitle-text .subtitle-play{
   display: flex;
   align-items: center;
   justify-content: center;
