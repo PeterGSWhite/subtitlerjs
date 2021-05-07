@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import {
   BrowserRouter as Router,
   Switch,
@@ -14,6 +14,10 @@ import './App.css'
 
 function App() {
   const playerRef = useRef(null);
+  const [currentSeconds, setCurrentSeconds] = useState(0)
+  const onProgress = (progress) => {
+    return setCurrentSeconds(progress.playedSeconds);
+  }
   return (
     <Router>
       {/* <Navbar /> */}
@@ -24,8 +28,8 @@ function App() {
             path="/"
             render={() => (
               <React.Fragment>
-                <Player playerRef={playerRef}/>
-                <SubtitleList playerRef={playerRef} />
+                <Player playerRef={playerRef} onProgress={onProgress}/>
+                <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds} />
               </React.Fragment>
             )}
           />

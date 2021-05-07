@@ -24,6 +24,14 @@
   justify-content: space-around;
 }
 
+.option {
+  cursor: pointer;
+}
+
+.option-addbelow:hover, .option-addabove:hover, .option-edit:hover, .option-delete:hover {
+  background-color: lightgray;
+}
+
 .subtitles-list {
  margin-top: 3.5em;
 }
@@ -59,6 +67,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.subtitle-play {
+  visibility: hidden;
+}
+.subtitle-play:hover {
+  cursor: pointer;
+}
+.subtitle:hover .subtitle-play {
+  visibility: visible;
+}
+.selected {
+  border-style: ridge;
+  border-width: 2px;
+  border-color: lightgray;
 }
 
 .gap {

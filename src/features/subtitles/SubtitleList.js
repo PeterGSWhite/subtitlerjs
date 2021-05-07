@@ -12,7 +12,7 @@ import {
 } from './subtitlesSlice'
 
 
-const Subtitle = ({ subtitleId, playerRef }) => {
+const Subtitle = ({ subtitleId, playerRef, currentSeconds }) => {
   const subtitle = useSelector((state) => selectSubtitleById(state, subtitleId))
 
   const handlePlayClick = () => {
@@ -21,18 +21,18 @@ const Subtitle = ({ subtitleId, playerRef }) => {
 
   return (
     <React.Fragment>
-      <div className="subtitle">
+      <div className={`subtitle ${currentSeconds < (subtitle.nextStart || 99999999) && currentSeconds >= subtitle.start ? 'selected' : ''}`}>
         <div className="subtitle-play">
           <i onClick={handlePlayClick} className="fa fa-play-circle"></i>
         </div>
         <div className="subtitle-text">asdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsada{subtitle.text}</div>
       </div>
-      <div className="gap" style={{ height: (subtitle.nextStart-subtitle.end) + 'em' }}></div>
+      <div className={`gap`} style={{ height: (subtitle.nextStart-subtitle.end) + 'em' }}></div>
     </React.Fragment>
   )
 }
 
-export const SubtitleList = ({playerRef}) => {
+export const SubtitleList = ({playerRef, currentSeconds}) => {
   const subtitleIds = useSelector(selectSubtitleIds)
   const status = useSelector((state) => state.subtitles.status)
   const error = useSelector((state) => state.subtitles.error)
@@ -44,22 +44,23 @@ export const SubtitleList = ({playerRef}) => {
     }
   }, [status, dispatch])
 
+  const [apStatus, setApStatus] = useState(true);
+  const handleToggleAP = () => {
+    setApStatus(!apStatus);
+  }
+
   let content
 
   if (status === 'loading') {
     content = <div className="loader">Loading...</div>
   } else if (status === 'succeeded') {
     content = subtitleIds.map((subtitleId) => (
-      <Subtitle key={subtitleId} subtitleId={subtitleId} playerRef={playerRef} />
+      <Subtitle key={subtitleId} subtitleId={subtitleId} playerRef={playerRef} currentSeconds={currentSeconds}/>
     ))
   } else if (status === 'error') {
     content = <div>{error}</div>
   }
 
-  const [apStatus, setApStatus] = useState(true);
-  const handleToggleAP = () => {
-    setApStatus(!apStatus);
-  }
 
   return (
     <section class="subtitles">
