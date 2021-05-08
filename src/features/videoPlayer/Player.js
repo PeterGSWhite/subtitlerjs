@@ -14,12 +14,11 @@ export const Player = ({playerRef, onProgress}) => {
   // };
 
   return (
-    <div class="playerContainer">
-      <ReactPlayer class="player"
+    <div className="playerContainer">
+      <ReactPlayer className="player"
         url={videoFilePath}
         ref={playerRef}
         onProgress={onProgress}
-        progressInterval="250"
         width="100%"
         height="100%"
         controls={true}

@@ -9,6 +9,7 @@ import {
   selectAllSubtitles,
   selectSubtitleIds,
   selectSubtitleById,
+  selectSubtitleBySeconds
 } from './subtitlesSlice'
 
 
@@ -37,7 +38,8 @@ export const SubtitleList = ({playerRef, currentSeconds}) => {
   const status = useSelector((state) => state.subtitles.status)
   const error = useSelector((state) => state.subtitles.error)
   const dispatch = useDispatch()
-
+  const currentSub = useSelector((state) => selectSubtitleBySeconds(state, currentSeconds))
+  
   useEffect(() => {
     if (status === 'idle') {
       dispatch(fetchSubtitles())
@@ -50,7 +52,7 @@ export const SubtitleList = ({playerRef, currentSeconds}) => {
   }
 
   let content
-
+  let currentSubP
   if (status === 'loading') {
     content = <div className="loader">Loading...</div>
   } else if (status === 'succeeded') {
@@ -63,7 +65,7 @@ export const SubtitleList = ({playerRef, currentSeconds}) => {
 
 
   return (
-    <section class="subtitles">
+    <section className="subtitles">
       <div className="options">
         <div className="option option-autopause">
           <span>Auto Pause</span><br/>
@@ -86,7 +88,7 @@ export const SubtitleList = ({playerRef, currentSeconds}) => {
           <i onClick={handleToggleAP} className="fa fa-trash"></i>
         </div>
       </div >
-      <div class="subtitles-list">
+      <div className="subtitles-list">
         {content}
       </div>
     </section>

@@ -6,6 +6,9 @@ import {
   Redirect,
 } from 'react-router-dom'
 
+
+import { useSelector, useDispatch } from 'react-redux'
+
 // import { Navbar } from './app/Navbar'
 import { SubtitleList } from './features/subtitles/SubtitleList'
 import { Player } from './features/videoPlayer/Player'
@@ -14,9 +17,11 @@ import './App.css'
 
 function App() {
   const playerRef = useRef(null);
+  // const currentSeconds = useRef()
   const [currentSeconds, setCurrentSeconds] = useState(0)
+  
   const onProgress = (progress) => {
-    return setCurrentSeconds(progress.playedSeconds);
+    setCurrentSeconds(progress.playedSeconds)
   }
   return (
     <Router>
@@ -29,7 +34,7 @@ function App() {
             render={() => (
               <React.Fragment>
                 <Player playerRef={playerRef} onProgress={onProgress}/>
-                <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds} />
+                <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds}/>
               </React.Fragment>
             )}
           />

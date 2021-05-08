@@ -1,16 +1,16 @@
 import {
     createSlice,
-    nanoid,
     createAsyncThunk,
     createEntityAdapter,
   } from '@reduxjs/toolkit'
+import { useSelector } from 'react-redux'
+
+import { client } from '../../api/client'
   
-  import { client } from '../../api/client'
-  
-  export const fetchSubtitles = createAsyncThunk('subtitles/fetchSubtitles', async () => {
-    const response = await client.get('/api/subtitles')
-    return response
-  })
+export const fetchSubtitles = createAsyncThunk('subtitles/fetchSubtitles', async () => {
+  const response = await client.get('/api/subtitles')
+  return response
+})
   
 //   export const addNewSubtitle = createAsyncThunk(
 //     'subtitles/addNewSubtitle',
@@ -64,6 +64,20 @@ import {
     },
   })
   
+export const selectSubtitleBySeconds =  (state, currentSeconds) => {
+    let currentSub = {};
+    if(state.subtitles.status === 'succeeded') {
+      for(const el of Object.values(state.subtitles.entities)) {
+        if(currentSeconds >= el.start && currentSeconds < (el.nextStart || 99999999)) {
+          currentSub = el
+          break
+        }
+      }
+    }
+    console.log('CURRENT SUB', currentSub)
+    return currentSub
+  }
+
   export const {
     subtitlesLoaded,
     subtitleUpdated,
