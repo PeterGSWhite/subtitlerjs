@@ -18,7 +18,7 @@
   color: white;
   position: fixed;
   width: 25%;
-  height: 3.5em;
+  height: 5vh;
   display: flex;
   flex-direction: row;
   justify-content: space-around;
@@ -33,7 +33,10 @@
 }
 
 .subtitles-list {
- margin-top: 3.5em;
+ margin-top: 5vh;
+ height: calc(100vh - 5vh);
+ overflow-y: auto;
+ overflow-x: hidden;
 }
 
 .subtitles {
@@ -42,9 +45,7 @@
   bottom: 0;
   right: 0;
   width: 25%;
-  height:auto;
-  overflow-y:scroll;
-  
+  height: auto;
 }
 
 .subtitle {
