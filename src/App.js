@@ -21,6 +21,7 @@ function App() {
   const [currentSeconds, setCurrentSeconds] = useState(0)
   
   const onProgress = (progress) => {
+    console.log(progress.playedSeconds)
     setCurrentSeconds(progress.playedSeconds)
   }
   return (
@@ -34,7 +35,7 @@ function App() {
             render={() => (
               <React.Fragment>
                 <Player playerRef={playerRef} onProgress={onProgress}/>
-                <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds}/>
+                <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds} setCurrentSeconds={setCurrentSeconds}/>
               </React.Fragment>
             )}
           />
