@@ -2269,5 +2269,11 @@ createServer({
     
       return schema.db.subtitles.insert(attrs)
     })
+    this.post("/api/subtitle/update", (schema, request) => {
+      let attrs = JSON.parse(request.requestBody)
+      let subtitle = schema.subtitles.findBy({ id: attrs.id })
+      
+      return subtitle.update(attrs)
+    })
   }
 })

@@ -12,13 +12,23 @@ export const fetchSubtitles = createAsyncThunk('subtitles/fetchSubtitles', async
   return response
 })
   
-//   export const addNewSubtitle = createAsyncThunk(
-//     'subtitles/addNewSubtitle',
-//     async (initialSubtitle) => {
-//       const response = await client.post('/api/subtitles', { subtitle: initialSubtitle })
-//       return response.subtitle
-//     }
-//   )
+export const addNewSubtitle = createAsyncThunk(
+  'subtitles/addNewSubtitle',
+  async (initialSubtitle) => {
+    const response = await client.post('/api/subtitles', { subtitle: initialSubtitle })
+    console.log('new', response)
+    return response.subtitle
+  }
+)
+
+export const updateSubtitle = createAsyncThunk(
+  'subtitles/updateSubtitle',
+  async (subtitleData) => {
+    const response = await client.post('/api/subtitle/update', { subtitle: subtitleData })
+    console.log('update', response)
+    return response.subtitle
+  }
+)
 
   const subtitlesAdapter = createEntityAdapter({
     // Sort chronologically
@@ -39,8 +49,8 @@ export const fetchSubtitles = createAsyncThunk('subtitles/fetchSubtitles', async
     }),
     reducers: {
       subtitleUpdated(state, action) {
-        const { id, start, end, text } = action.payload
-        subtitlesAdapter.updateOne(state, { id, changes: { start, end, text } })
+        const { id, start, end, text, nextStart, prevEnd } = action.payload
+        subtitlesAdapter.updateOne(state, { id, changes: { start, end, nextStart, prevEnd, text } })
       },
       subtitlesCleared: subtitlesAdapter.removeAll,
     },
@@ -61,6 +71,10 @@ export const fetchSubtitles = createAsyncThunk('subtitles/fetchSubtitles', async
           state.error = action.payload
         }
       },
+      [addNewSubtitle.fulfilled]: (state, action) => {
+        console.log(state.status, action)
+        subtitlesAdapter.addOne(state, action)
+      }
     },
   })
   
@@ -74,9 +88,39 @@ export const selectSubtitleBySeconds =  (state, currentSeconds) => {
         }
       }
     }
-    console.log('CURRENT SUB', currentSub)
     return currentSub
   }
+export const selectPrevSubtitleBySeconds =  (state, currentSeconds) => {
+  let prevSub = {};
+  let prevEl = null
+  if(state.subtitles.status === 'succeeded') {
+    for(const el of Object.values(state.subtitles.entities)) {
+      if(currentSeconds >= el.start && currentSeconds < (el.nextStart || 99999999)) {
+        prevSub = prevEl
+        break
+      }
+      prevEl = el
+    }
+  }
+  return prevSub
+}
+
+export const selectNextSubtitleBySeconds =  (state, currentSeconds) => {
+  let nextSub = {};
+  let foundCurrent = false
+  if(state.subtitles.status === 'succeeded') {
+    for(const el of Object.values(state.subtitles.entities)) {
+      if(foundCurrent) {
+        nextSub = el
+        break
+      }
+      if(currentSeconds >= el.start && currentSeconds < (el.nextStart || 99999999)) {
+        foundCurrent = true
+      }
+    }
+  }
+  return nextSub
+}
 
   export const {
     subtitlesLoaded,

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link } from 'react-router-dom'
+import { unwrapResult, nanoid } from '@reduxjs/toolkit'
 import 'font-awesome/css/font-awesome.min.css';
 import Switch from "react-switch";
 import Fab from '@material-ui/core/Fab';
@@ -11,7 +12,11 @@ import {
   selectAllSubtitles,
   selectSubtitleIds,
   selectSubtitleById,
-  selectSubtitleBySeconds
+  selectSubtitleBySeconds,
+  selectPrevSubtitleBySeconds,
+  selectNextSubtitleBySeconds,
+  addNewSubtitle,
+  updateSubtitle
 } from './subtitlesSlice'
 
 
@@ -33,7 +38,7 @@ const Subtitle = ({ subtitleId, playerRef, currentSeconds, setCurrentSeconds }) 
         <div className="subtitle-play">
           <i className="fa fa-play-circle"></i>
         </div>
-        <div className="subtitle-text">asdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsadaasdsada{subtitle.text}</div>
+        <div className="subtitle-text">Goodbye sanity{subtitle.text}</div>
       </div>
       <div className={`gap`} style={{ height: (subtitle.nextStart-subtitle.end) + 'em' }}></div>
     </React.Fragment>
@@ -46,6 +51,9 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
   const error = useSelector((state) => state.subtitles.error)
   const dispatch = useDispatch()
   const currentSub = useSelector((state) => selectSubtitleBySeconds(state, currentSeconds))
+  const prevSub = useSelector((state) => selectPrevSubtitleBySeconds(state, currentSeconds))
+  const nextSub = useSelector((state) => selectNextSubtitleBySeconds(state, currentSeconds))
+  const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
 
   useEffect(() => {
     if (status === 'idle') {
@@ -53,15 +61,64 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
     }
   }, [status, dispatch])
 
+  // Autopause functionality
   const [apStatus, setApStatus] = useState(true);
   const handleToggleAP = () => {
     setApStatus(!apStatus);
   }
 
+  // Focus selected functionality
   const handleFocusSelected = () => {
     document.getElementsByClassName("subtitles-list")[0].focus();
     console.log(document.getElementsByClassName("selected")[0])
     document.getElementsByClassName("selected")[0].scrollIntoView({behavior: 'smooth'});
+  }
+
+  // Add subtitle functionality
+  const addSubtitle = async () => {
+    const prevSubFrozen = {...prevSub}
+    const nextSubFrozen = {...nextSub}
+    const currentSubFrozen = {...currentSub}
+    const newStart = currentSubFrozen.prevEnd + 0.1
+    const newEnd = currentSubFrozen.start - 0.1
+    const newNextStart = currentSubFrozen.start
+    const newPrevEnd = currentSubFrozen.prevEnd
+    if (addDeleteRequestStatus === 'idle') {
+      try {
+        setAddDeleteRequestStatus('pending')
+        const newSubAction = await dispatch(
+          addNewSubtitle({ 
+            start: newStart, 
+            end: newEnd, 
+            nextstart: newNextStart, 
+            prevEnd: newPrevEnd, 
+            text: '', 
+            id: nanoid()
+          })
+        )
+        unwrapResult(newSubAction)
+        const prevSubUpdateAction = await dispatch(
+          updateSubtitle({ 
+            nextstart: newStart,
+            id: prevSubFrozen.id
+          })
+        )
+        unwrapResult(prevSubUpdateAction)
+        const currentSubUpdateAction = await dispatch(
+          updateSubtitle({ 
+            prevEnd: newEnd,
+            id: currentSubFrozen.id
+          })
+        )
+        unwrapResult(currentSubUpdateAction)
+      } catch (err) {
+        console.error('Failed to add a subtitle: ', err)
+      } finally {
+        setAddDeleteRequestStatus('idle')
+        setCurrentSeconds(newStart)
+        handleFocusSelected()
+      }
+    }
   }
 
   let content
@@ -83,7 +140,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
           <span>Auto Pause</span><br/>
           <Switch onChange={handleToggleAP} checked={apStatus} />
         </div>
-        <div className="option option-addabove" onClick={handleToggleAP}>
+        <div className="option option-addabove" onClick={addSubtitle}>
           <span>Add above</span><br/>
           <i className="fa fa-arrow-circle-up"></i>
         </div>
