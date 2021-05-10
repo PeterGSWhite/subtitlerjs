@@ -26,13 +26,12 @@ const Subtitle = ({ subtitleId, playerRef, currentSeconds, setCurrentSeconds }) 
   const handlePlayClick = () => {
     playerRef.current.seekTo(subtitle.start, "seconds");
     setCurrentSeconds(subtitle.start)
-    console.log(subtitle.start)
   }
 
   return (
     <React.Fragment>
       <div 
-        className={`subtitle ${currentSeconds < (subtitle.nextStart || 99999999) && currentSeconds >= subtitle.start ? 'selected' : ''}`}
+        className={`subtitle ${currentSeconds < (subtitle.next_start || 99999999) && currentSeconds >= subtitle.start ? 'selected' : ''}`}
         onClick={handlePlayClick} 
       >
         <div className="subtitle-play">
@@ -40,7 +39,7 @@ const Subtitle = ({ subtitleId, playerRef, currentSeconds, setCurrentSeconds }) 
         </div>
         <div className="subtitle-text">Goodbye sanity{subtitle.text}</div>
       </div>
-      <div className={`gap`} style={{ height: (subtitle.nextStart-subtitle.end) + 'em' }}></div>
+      <div className={`gap`} style={{ height: (subtitle.next_start-subtitle.end) + 'em' }}></div>
     </React.Fragment>
   )
 }
@@ -79,10 +78,14 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
     const prevSubFrozen = {...prevSub}
     const nextSubFrozen = {...nextSub}
     const currentSubFrozen = {...currentSub}
-    const newStart = currentSubFrozen.prevEnd + 0.1
-    const newEnd = currentSubFrozen.start - 0.1
+    console.log('psf', prevSubFrozen)
+    console.log('nsf', nextSubFrozen)
+    console.log('csf', currentSubFrozen)
+    const newStart = parseFloat((currentSubFrozen.prev_end + 0.05).toFixed(6))
+    console.log('ns', newStart)
+    const newEnd = parseFloat((currentSubFrozen.start - 0.05).toFixed(6))
     const newNextStart = currentSubFrozen.start
-    const newPrevEnd = currentSubFrozen.prevEnd
+    const newPrevEnd = currentSubFrozen.prev_end
     if (addDeleteRequestStatus === 'idle') {
       try {
         setAddDeleteRequestStatus('pending')
@@ -90,33 +93,34 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
           addNewSubtitle({ 
             start: newStart, 
             end: newEnd, 
-            nextstart: newNextStart, 
-            prevEnd: newPrevEnd, 
+            next_start: newNextStart, 
+            prev_end: newPrevEnd, 
             text: '', 
             id: nanoid()
           })
         )
+        // const prevSubUpdateAction = await dispatch(
+        //   updateSubtitle({ 
+        //     id: prevSubFrozen.id,
+        //     next_start: newStart
+        //   })
+        // )
+        // const currentSubUpdateAction = await dispatch(
+        //   updateSubtitle({ 
+        //     id: currentSubFrozen.id,
+        //     prev_end: newEnd
+        //   })
+        // )
         unwrapResult(newSubAction)
-        const prevSubUpdateAction = await dispatch(
-          updateSubtitle({ 
-            nextstart: newStart,
-            id: prevSubFrozen.id
-          })
-        )
-        unwrapResult(prevSubUpdateAction)
-        const currentSubUpdateAction = await dispatch(
-          updateSubtitle({ 
-            prevEnd: newEnd,
-            id: currentSubFrozen.id
-          })
-        )
-        unwrapResult(currentSubUpdateAction)
+        // unwrapResult(prevSubUpdateAction)
+        // unwrapResult(currentSubUpdateAction)
       } catch (err) {
         console.error('Failed to add a subtitle: ', err)
       } finally {
         setAddDeleteRequestStatus('idle')
+        playerRef.current.seekTo(newStart, "seconds");
         setCurrentSeconds(newStart)
-        handleFocusSelected()
+        // handleFocusSelected()
       }
     }
   }
@@ -152,7 +156,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
           <span>Edit</span><br/>
           <i className="fa fa-edit"></i>
         </div>
-        <div className="option option-delete" onClick={handleToggleAP}>
+        <div className="option option-delete" onClick={()=>{}}>
           <span>Delete</span><br/>
           <i className="fa fa-trash"></i>
         </div>
@@ -161,7 +165,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
         <VerticalAlignCenterIcon />
       </Fab>
       <div className="subtitles-list">
-        <p class="debugstring">{currentSub.start}</p>
+        <p className="debugstring">{currentSub.start}</p>
         {content}
       </div>
     </section>

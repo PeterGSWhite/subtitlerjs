@@ -4,85 +4,101 @@ import {
     createEntityAdapter,
   } from '@reduxjs/toolkit'
 import { useSelector } from 'react-redux'
+const axios = require('axios');
 
-import { client } from '../../api/client'
   
 export const fetchSubtitles = createAsyncThunk('subtitles/fetchSubtitles', async () => {
-  const response = await client.get('/api/subtitles')
-  return response
+  const response = await axios.get('http://127.0.0.1:5000/api/subtitles')
+  console.log(response)
+  return response.data.subtitles
 })
   
 export const addNewSubtitle = createAsyncThunk(
   'subtitles/addNewSubtitle',
   async (initialSubtitle) => {
-    const response = await client.post('/api/subtitles', { subtitle: initialSubtitle })
-    console.log('new', response)
-    return response.subtitle
+    try{
+      const response = await axios.post('http://127.0.0.1:5000/api/subtitles', { subtitle: initialSubtitle })
+      return response.data 
+    } catch(e) {
+      console.log(e)
+    }
   }
 )
 
 export const updateSubtitle = createAsyncThunk(
   'subtitles/updateSubtitle',
-  async (subtitleData) => {
-    const response = await client.post('/api/subtitle/update', { subtitle: subtitleData })
-    console.log('update', response)
-    return response.subtitle
+  async (subtitleDiff) => {
+    try{
+      const response = await axios.patch(`/api/subtitles/${subtitleDiff.id}`, { subtitleDiff: subtitleDiff })
+      return response.data.subtitle
+    } catch(e) {
+      console.log(e)
+    }
   }
 )
 
-  const subtitlesAdapter = createEntityAdapter({
-    // Sort chronologically
-    sortComparer: (a, b) => a.start - b.start,
-  })
+// export const deleteSubtitle = createAsyncThunk(
+//   'subtitles/deleteSubtitle',
+//   async (subtitleData) => {
+//     const response = await client.post('/api/subtitle/delete', { subtitle: subtitleData })
+//     console.log('update', response)
+//     return response.subtitle
+//   }
+// )
+
+const subtitlesAdapter = createEntityAdapter({
+  // Sort chronologically
+  sortComparer: (a, b) => a.start - b.start,
+})
   
-  export const {
-    selectAll: selectAllSubtitles,
-    selectIds: selectSubtitleIds,
-    selectById: selectSubtitleById,
-  } = subtitlesAdapter.getSelectors((state) => state.subtitles)
+export const {
+  selectAll: selectAllSubtitles,
+  selectIds: selectSubtitleIds,
+  selectById: selectSubtitleById,
+} = subtitlesAdapter.getSelectors((state) => state.subtitles)
   
-  const subtitlesSlice = createSlice({
-    name: 'subtitles',
-    initialState: subtitlesAdapter.getInitialState({
-      status: 'idle',
-      error: null,
-    }),
-    reducers: {
-      subtitleUpdated(state, action) {
-        const { id, start, end, text, nextStart, prevEnd } = action.payload
-        subtitlesAdapter.updateOne(state, { id, changes: { start, end, nextStart, prevEnd, text } })
-      },
-      subtitlesCleared: subtitlesAdapter.removeAll,
+const subtitlesSlice = createSlice({
+  name: 'subtitles',
+  initialState: subtitlesAdapter.getInitialState({
+    status: 'idle',
+    error: null,
+  }),
+  reducers: {
+    subtitleUpdated(state, action) {
+      const { id, start, end, text, next_start, prev_end } = action.payload
+      subtitlesAdapter.updateOne(state, { id, changes: { start, end, next_start, prev_end, text } })
     },
-    extraReducers: {
-      [fetchSubtitles.pending]: (state, action) => {
-        state.status = 'loading'
-        state.error = null
-      },
-      [fetchSubtitles.fulfilled]: (state, action) => {
-        if (state.status === 'loading') {
-          subtitlesAdapter.upsertMany(state, action)
-          state.status = 'succeeded'
-        }
-      },
-      [fetchSubtitles.rejected]: (state, action) => {
-        if (state.status === 'loading') {
-          state.status = 'failed'
-          state.error = action.payload
-        }
-      },
-      [addNewSubtitle.fulfilled]: (state, action) => {
-        console.log(state.status, action)
-        subtitlesAdapter.addOne(state, action)
+    subtitlesCleared: subtitlesAdapter.removeAll,
+  },
+  extraReducers: {
+    [fetchSubtitles.pending]: (state, action) => {
+      state.status = 'loading'
+      state.error = null
+    },
+    [fetchSubtitles.fulfilled]: (state, action) => {
+      if (state.status === 'loading') {
+        subtitlesAdapter.upsertMany(state, action)
+        state.status = 'succeeded'
       }
     },
-  })
+    [fetchSubtitles.rejected]: (state, action) => {
+      if (state.status === 'loading') {
+        state.status = 'failed'
+        state.error = action.payload
+      }
+    },
+    [addNewSubtitle.fulfilled]: (state, action) => {
+      console.log(state.status, action)
+      subtitlesAdapter.addOne(state, action)
+    }
+  },
+})
   
 export const selectSubtitleBySeconds =  (state, currentSeconds) => {
     let currentSub = {};
     if(state.subtitles.status === 'succeeded') {
       for(const el of Object.values(state.subtitles.entities)) {
-        if(currentSeconds >= el.start && currentSeconds < (el.nextStart || 99999999)) {
+        if(currentSeconds >= el.start && currentSeconds < (el.next_start || 99999999)) {
           currentSub = el
           break
         }
@@ -95,7 +111,7 @@ export const selectPrevSubtitleBySeconds =  (state, currentSeconds) => {
   let prevEl = null
   if(state.subtitles.status === 'succeeded') {
     for(const el of Object.values(state.subtitles.entities)) {
-      if(currentSeconds >= el.start && currentSeconds < (el.nextStart || 99999999)) {
+      if(currentSeconds >= el.start && currentSeconds < (el.next_start || 99999999)) {
         prevSub = prevEl
         break
       }
@@ -114,7 +130,7 @@ export const selectNextSubtitleBySeconds =  (state, currentSeconds) => {
         nextSub = el
         break
       }
-      if(currentSeconds >= el.start && currentSeconds < (el.nextStart || 99999999)) {
+      if(currentSeconds >= el.start && currentSeconds < (el.next_start || 99999999)) {
         foundCurrent = true
       }
     }
