@@ -16,7 +16,8 @@ import {
   selectPrevSubtitleBySeconds,
   selectNextSubtitleBySeconds,
   addNewSubtitle,
-  updateSubtitle
+  updateSubtitle,
+  deleteSubtitle
 } from './subtitlesSlice'
 
 
@@ -74,15 +75,11 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
   }
 
   // Add subtitle functionality
-  const addSubtitle = async () => {
+  const handleAddSubtitle = async () => {
     const prevSubFrozen = {...prevSub}
     const nextSubFrozen = {...nextSub}
     const currentSubFrozen = {...currentSub}
-    console.log('psf', prevSubFrozen)
-    console.log('nsf', nextSubFrozen)
-    console.log('csf', currentSubFrozen)
     const newStart = parseFloat((currentSubFrozen.prev_end + 0.05).toFixed(6))
-    console.log('ns', newStart)
     const newEnd = parseFloat((currentSubFrozen.start - 0.05).toFixed(6))
     const newNextStart = currentSubFrozen.start
     const newPrevEnd = currentSubFrozen.prev_end
@@ -99,28 +96,81 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
             id: nanoid()
           })
         )
-        // const prevSubUpdateAction = await dispatch(
-        //   updateSubtitle({ 
-        //     id: prevSubFrozen.id,
-        //     next_start: newStart
-        //   })
-        // )
-        // const currentSubUpdateAction = await dispatch(
-        //   updateSubtitle({ 
-        //     id: currentSubFrozen.id,
-        //     prev_end: newEnd
-        //   })
-        // )
+        const prevSubUpdateAction = await dispatch(
+          updateSubtitle({ 
+            id: prevSubFrozen.id,
+            next_start: newStart,
+            start: prevSubFrozen.start,
+            end: prevSubFrozen.end,
+            prev_end: prevSubFrozen.prev_end,
+            text: prevSubFrozen.text,
+          })
+        )
+        const currentSubUpdateAction = await dispatch(
+          updateSubtitle({ 
+            id: currentSubFrozen.id,
+            prev_end: newEnd,
+            start: currentSubFrozen.start,
+            end: currentSubFrozen.end,
+            next_start: currentSubFrozen.next_start,
+            text: currentSubFrozen.text,
+          })
+        )
         unwrapResult(newSubAction)
-        // unwrapResult(prevSubUpdateAction)
-        // unwrapResult(currentSubUpdateAction)
+        unwrapResult(prevSubUpdateAction)
+        unwrapResult(currentSubUpdateAction)
       } catch (err) {
         console.error('Failed to add a subtitle: ', err)
       } finally {
         setAddDeleteRequestStatus('idle')
         playerRef.current.seekTo(newStart, "seconds");
         setCurrentSeconds(newStart)
-        // handleFocusSelected()
+        handleFocusSelected()
+      }
+    }
+  }
+
+  // Delete subtitle functionality
+  const handleDeleteSubtitle = async () => {
+    const prevSubFrozen = {...prevSub}
+    const nextSubFrozen = {...nextSub}
+    const currentSubFrozen = {...currentSub}
+    if (addDeleteRequestStatus === 'idle') {
+      try {
+        setAddDeleteRequestStatus('pending')
+        const deleteAction = await dispatch(
+          deleteSubtitle(currentSubFrozen)
+        )
+        const prevSubUpdateAction = await dispatch(
+          updateSubtitle({ 
+            id: prevSubFrozen.id,
+            next_start: nextSubFrozen.start,
+            start: prevSubFrozen.start,
+            end: prevSubFrozen.end,
+            prev_end: prevSubFrozen.prev_end,
+            text: prevSubFrozen.text,
+          })
+        )
+        const nextSubUpdateAction = await dispatch(
+          updateSubtitle({ 
+            id: currentSubFrozen.id,
+            prev_end: prevSubFrozen.end,
+            start: currentSubFrozen.start,
+            end: currentSubFrozen.end,
+            next_start: currentSubFrozen.next_start,
+            text: currentSubFrozen.text,
+          })
+        )
+        unwrapResult(deleteAction)
+        unwrapResult(prevSubUpdateAction)
+        unwrapResult(nextSubUpdateAction)
+      } catch (err) {
+        console.error('Failed to delete a subtitle: ', err)
+      } finally {
+        setAddDeleteRequestStatus('idle')
+        playerRef.current.seekTo(prevSubFrozen.end, "seconds");
+        setCurrentSeconds(prevSubFrozen.end)
+        handleFocusSelected()
       }
     }
   }
@@ -144,7 +194,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
           <span>Auto Pause</span><br/>
           <Switch onChange={handleToggleAP} checked={apStatus} />
         </div>
-        <div className="option option-addabove" onClick={addSubtitle}>
+        <div className="option option-addabove" onClick={handleAddSubtitle}>
           <span>Add above</span><br/>
           <i className="fa fa-arrow-circle-up"></i>
         </div>
@@ -156,7 +206,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
           <span>Edit</span><br/>
           <i className="fa fa-edit"></i>
         </div>
-        <div className="option option-delete" onClick={()=>{}}>
+        <div className="option option-delete" onClick={handleDeleteSubtitle}>
           <span>Delete</span><br/>
           <i className="fa fa-trash"></i>
         </div>

@@ -27,24 +27,27 @@ export const addNewSubtitle = createAsyncThunk(
 
 export const updateSubtitle = createAsyncThunk(
   'subtitles/updateSubtitle',
-  async (subtitleDiff) => {
+  async (updated_subtitle) => {
     try{
-      const response = await axios.patch(`/api/subtitles/${subtitleDiff.id}`, { subtitleDiff: subtitleDiff })
-      return response.data.subtitle
+      const response = await axios.patch(`http://127.0.0.1:5000/api/subtitles`, { subtitle: updated_subtitle })
+      return response.data
     } catch(e) {
       console.log(e)
     }
   }
 )
 
-// export const deleteSubtitle = createAsyncThunk(
-//   'subtitles/deleteSubtitle',
-//   async (subtitleData) => {
-//     const response = await client.post('/api/subtitle/delete', { subtitle: subtitleData })
-//     console.log('update', response)
-//     return response.subtitle
-//   }
-// )
+export const deleteSubtitle = createAsyncThunk(
+  'subtitles/deleteSubtitle',
+  async (subtitle) => {
+    try{
+      const response = await axios.delete(`http://127.0.0.1:5000/api/subtitles`, { subtitle: subtitle })
+      return response.data
+    } catch(e) {
+      console.log(e)
+    }
+  }
+)
 
 const subtitlesAdapter = createEntityAdapter({
   // Sort chronologically
@@ -90,6 +93,14 @@ const subtitlesSlice = createSlice({
     [addNewSubtitle.fulfilled]: (state, action) => {
       console.log(state.status, action)
       subtitlesAdapter.addOne(state, action)
+    },
+    [updateSubtitle.fulfilled]: (state, action) => {
+      console.log(state.status, action)
+      subtitlesAdapter.updateOne(state, action)
+    },
+    [deleteSubtitle.fulfilled]: (state, action) => {
+      console.log(state.status, action)
+      subtitlesAdapter.removeOne(state, action)
     }
   },
 })

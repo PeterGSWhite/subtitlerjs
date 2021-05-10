@@ -37,9 +37,7 @@ def get_subtitles():
 
 @app.route('/api/subtitles', methods = ['POST'])
 def create_subtitle():
-    print(request, file=sys.stderr)
     subtitle = request.get_json()['subtitle']
-    print('sub', subtitle, file=sys.stderr)
 
     conn = create_connection(database)
     cur = conn.cursor()
@@ -52,11 +50,36 @@ def create_subtitle():
 
 @app.route('/api/subtitles', methods = ['PATCH'])
 def update_subtitle():
-    pass
+    subtitle = request.get_json()['subtitle']
+    print('udpated sub', subtitle, file=sys.stderr)
+    conn = create_connection(database)
+    cur = conn.cursor()
+
+    sql = ''' UPDATE subtitles
+              SET start = ? ,
+                  end = ? ,
+                  prev_end = ?,
+                  next_start = ?,
+                  text = ?
+              WHERE id = ?'''
+    cur = conn.cursor()
+    cur.execute(sql, (subtitle['start'], subtitle['end'], subtitle['prev_end'], subtitle['next_start'], subtitle['text'], subtitle['id']))
+    conn.commit()
+    return subtitle
 
 @app.route('/api/subtitles', methods = ['DELETE'])
 def delete_subtitle():
-    pass
+    subtitle = request.get_json()['subtitle']
+    print('delete sub', subtitle, file=sys.stderr)
+    conn = create_connection(database)
+    cur = conn.cursor()
+
+    sql = ''' DELTE FROM subtitles
+              WHERE id = ?'''
+    cur = conn.cursor()
+    cur.execute(sql, (subtitle['id']))
+    conn.commit()
+    return subtitle
 
 if __name__ == "__main__":
     app.run()
