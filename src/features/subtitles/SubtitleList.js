@@ -71,7 +71,12 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
   const handleFocusSelected = () => {
     document.getElementsByClassName("subtitles-list")[0].focus();
     console.log(document.getElementsByClassName("selected")[0])
-    document.getElementsByClassName("selected")[0].scrollIntoView({behavior: 'smooth'});
+    try {
+      document.getElementsByClassName("selected")[0].scrollIntoView({behavior: 'smooth'});
+    } catch {
+
+    }
+    
   }
 
   // Add subtitle functionality
@@ -139,7 +144,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
       try {
         setAddDeleteRequestStatus('pending')
         const deleteAction = await dispatch(
-          deleteSubtitle(currentSubFrozen)
+          deleteSubtitle(currentSubFrozen.id)
         )
         const prevSubUpdateAction = await dispatch(
           updateSubtitle({ 
@@ -168,9 +173,14 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
         console.error('Failed to delete a subtitle: ', err)
       } finally {
         setAddDeleteRequestStatus('idle')
-        playerRef.current.seekTo(prevSubFrozen.end, "seconds");
-        setCurrentSeconds(prevSubFrozen.end)
-        handleFocusSelected()
+        try {
+          playerRef.current.seekTo(prevSubFrozen.end, "seconds");
+          setCurrentSeconds(prevSubFrozen.end)
+          handleFocusSelected()
+        } catch {
+          
+        }
+        
       }
     }
   }

@@ -41,6 +41,7 @@
 
 .option {
   cursor: pointer;
+  text-align: center;
 }
 
 .option-addbelow:hover, .option-addabove:hover, .option-edit:hover, .option-delete:hover {

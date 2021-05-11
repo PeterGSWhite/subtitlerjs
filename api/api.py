@@ -1,11 +1,12 @@
 import time, sys
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, make_response
 
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
+app.config['CORS_HEADERS'] = 'Access-Control-Allow-Origin'
 import sqlite3
 from sqlite3 import Error
 
@@ -67,19 +68,22 @@ def update_subtitle():
     conn.commit()
     return subtitle
 
-@app.route('/api/subtitles', methods = ['DELETE'])
+@app.route('/api/subtitles/', methods = ['DELETE'])
 def delete_subtitle():
-    subtitle = request.get_json()['subtitle']
-    print('delete sub', subtitle, file=sys.stderr)
+    print('j', request.get_json())
+    print('da', request.data)
+    id = request.get_json()['id']
     conn = create_connection(database)
     cur = conn.cursor()
 
-    sql = ''' DELTE FROM subtitles
+    sql = ''' DELETE FROM subtitles
               WHERE id = ?'''
     cur = conn.cursor()
-    cur.execute(sql, (subtitle['id']))
+    cur.execute(sql, (id,))
     conn.commit()
-    return subtitle
+    response = make_response(jsonify({}), 204)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 if __name__ == "__main__":
     app.run()

@@ -37,12 +37,15 @@ export const updateSubtitle = createAsyncThunk(
   }
 )
 
+//  THIS ONE GAVE ME SO MUCH TROUBLE - IM NOT EVEN HANDLING THE REPONSE - I JUST ASSUME IT DELETES SUCCESFULLY
 export const deleteSubtitle = createAsyncThunk(
   'subtitles/deleteSubtitle',
-  async (subtitle) => {
+  async (id) => {
     try{
-      const response = await axios.delete(`http://127.0.0.1:5000/api/subtitles`, { subtitle: subtitle })
-      return response.data
+      const response = await axios.delete(`http://127.0.0.1:5000/api/subtitles/`, {data: {
+        id: id
+      }})
+      return id
     } catch(e) {
       console.log(e)
     }
@@ -67,11 +70,11 @@ const subtitlesSlice = createSlice({
     error: null,
   }),
   reducers: {
-    subtitleUpdated(state, action) {
-      const { id, start, end, text, next_start, prev_end } = action.payload
-      subtitlesAdapter.updateOne(state, { id, changes: { start, end, next_start, prev_end, text } })
-    },
-    subtitlesCleared: subtitlesAdapter.removeAll,
+    // subtitleUpdated(state, action) {
+    //   const { id, start, end, text, next_start, prev_end } = action.payload
+    //   subtitlesAdapter.updateOne(state, { id, changes: { start, end, next_start, prev_end, text } })
+    // },
+    // subtitlesCleared: subtitlesAdapter.removeAll,
   },
   extraReducers: {
     [fetchSubtitles.pending]: (state, action) => {
@@ -96,7 +99,7 @@ const subtitlesSlice = createSlice({
     },
     [updateSubtitle.fulfilled]: (state, action) => {
       console.log(state.status, action)
-      subtitlesAdapter.updateOne(state, action)
+      subtitlesAdapter.upsertOne(state, action)
     },
     [deleteSubtitle.fulfilled]: (state, action) => {
       console.log(state.status, action)
