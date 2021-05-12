@@ -5,7 +5,7 @@ import {
   Route,
   Redirect,
 } from 'react-router-dom'
-
+import { HotKeys } from "react-hotkeys";
 
 import { useSelector, useDispatch } from 'react-redux'
 
@@ -24,6 +24,13 @@ function App() {
     console.log(progress.playedSeconds)
     setCurrentSeconds(progress.playedSeconds)
   }
+
+  const keyMap = {
+    // SNAP_LEFT: "command+left",
+    GO_PREVIOUS: ["left"],
+    GO_NEXT: ["right"],
+  };
+
   return (
     <Router>
       {/* <Navbar /> */}
@@ -35,7 +42,9 @@ function App() {
             render={() => (
               <React.Fragment>
                 <Player playerRef={playerRef} onProgress={onProgress}/>
-                <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds} setCurrentSeconds={setCurrentSeconds}/>
+                <HotKeys keyMap={keyMap} allowChanges={true}>
+                  <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds} setCurrentSeconds={setCurrentSeconds}/>
+                </HotKeys>
               </React.Fragment>
             )}
           />

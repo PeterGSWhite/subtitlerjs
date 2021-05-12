@@ -6,14 +6,15 @@ import 'font-awesome/css/font-awesome.min.css';
 import Switch from "react-switch";
 import Fab from '@material-ui/core/Fab';
 import VerticalAlignCenterIcon from '@material-ui/icons/VerticalAlignCenter';
+import { HotKeys } from "react-hotkeys";
 
 import {
+  initFromFile,
   selectSubtitleIds,
   selectSubtitleById,
-  selectSubtitleBySeconds,
-  selectPrevSubtitleBySeconds,
-  selectNextSubtitleBySeconds,
-  initFromFile,
+  selectIdBySeconds,
+  selectIndexbyId,
+  selectSubtitleByIndex
 } from './subtitlesSlice'
 
 
@@ -43,14 +44,30 @@ const Subtitle = ({ subtitleId, playerRef, currentSeconds, setCurrentSeconds }) 
 
 export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => {
   const subtitleIds = useSelector(selectSubtitleIds)
-  const status = useSelector((state) => state.subtitles.status)
-  const error = useSelector((state) => state.subtitles.error)
   const dispatch = useDispatch()
-  const currentSub = useSelector((state) => selectSubtitleBySeconds(state, currentSeconds))
-  const prevSub = useSelector((state) => selectPrevSubtitleBySeconds(state, currentSeconds))
-  const nextSub = useSelector((state) => selectNextSubtitleBySeconds(state, currentSeconds))
+  const currentId = useSelector((state) => selectIdBySeconds(state, currentSeconds))
+  const currentIndex = useSelector((state) => selectIndexbyId(state, currentId))
+  const prev = useSelector((state) => selectSubtitleByIndex(state, currentIndex - 1))
+  const current = useSelector((state) => selectSubtitleByIndex(state, currentIndex))
+  const next = useSelector((state) => selectSubtitleByIndex(state, currentIndex + 1))
   const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
-
+  
+  // Hotkey logic
+  const goPrevious = React.useCallback(() => {
+    console.log('go previous', prev)
+    // playerRef.current.seekTo(playhead[0].start, "seconds");
+    // setCurrentSeconds(playhead[0].start)
+  }, [])
+  const goNext = React.useCallback(() => {
+    console.log('go next', next)
+    // playerRef.current.seekTo(playhead[2].start, "seconds");
+    // setCurrentSeconds(playhead[2].start)
+  }, [])
+  
+  const handlers = {
+    GO_PREVIOUS: goPrevious,
+    GO_NEXT: goNext
+  };
   // useEffect(() => {
   //   if (status === 'idle') {
   //     dispatch(fetchSubtitles())
@@ -106,6 +123,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
 
 
   return (
+    <HotKeys handlers={handlers} allowChanges={true}>
     <section className="subtitles">
       <div className={`options ${subtitleIds.length ? '': 'hidden'}`}>
         <div className="option option-autopause">
@@ -139,9 +157,10 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
         <VerticalAlignCenterIcon />
       </Fab>
       <div className="subtitles-list">
-        <p className="debugstring">{currentSub.start}</p>
+        {prev.start}
         {content}
       </div>
     </section>
+    </HotKeys>
   )
 }

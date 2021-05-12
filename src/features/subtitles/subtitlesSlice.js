@@ -31,14 +31,12 @@ const subtitlesSlice = createSlice({
         subtitlesAdapter.addMany(state, action.payload.subtitles);
       },
       prepare(filebody) {
-        // let re = /(\d+)[\n\r\\n\\r](\d{2}):(\d{2}):(\d{2}),(\d{3}) --> (\d{2}):(\d{2}):(\d{2}),(\d{3})[\n\r\\n\\r]((?:.+[\n\r\\]?)+)/g;
         let removeCRRE = /[\r]+/gm
         filebody = filebody.replace(removeCRRE, '')
         let re = /(\d+)\n(\d{2}):(\d{2}):(\d{2}),(\d{3}) --> (\d{2}):(\d{2}):(\d{2}),(\d{3})\n((?:[^\n]+\n?)+)/g
         let subtitles = []
         let index = 0
         for(let match of filebody.matchAll(re)){
-          console.log('called', match)
           let startSeconds = parseInt(match[2])*3600 + parseInt(match[3])*60 + parseInt(match[4]) + parseInt(match[5])/1000;
           let endSeconds = parseInt(match[6])*3600 + parseInt(match[7])*60 + parseInt(match[8]) + parseInt(match[9])/1000;
           let text = match[10]
@@ -55,7 +53,6 @@ const subtitlesSlice = createSlice({
             text: text.trim().trim(),
             prev_end: prevEnd
           }
-          console.log(subtitle)
           subtitles.push(subtitle)
           index++;
         }
@@ -70,45 +67,46 @@ const subtitlesSlice = createSlice({
 })
 
 
-export const selectSubtitleBySeconds =  (state, currentSeconds) => {
+export const selectIdBySeconds =  (state, seconds) => {
+  console.log('getting id', seconds, state.subtitles.entities)
   let currentSub = {};
   for(const el of Object.values(state.subtitles.entities)) {
-    if(currentSeconds >= el.start && currentSeconds < (el.next_start || 99999999)) {
+    console.log('entity', el)
+    if(seconds >= el.start && seconds < (el.next_start || 99999999)) {
       currentSub = el
       break
     }
   }
+  console.log('sub', currentSub.id)
+  return currentSub.id
+}
+
+export const selectIndexbyId =  (state, currentId) => {
+  if(currentId && state.subtitles.ids.length){
+    return state.subtitles.ids.indexOf(currentId)
+  }
+  else {
+    return 0
+  }
   
-  return currentSub
-}
-export const selectPrevSubtitleBySeconds =  (state, currentSeconds) => {
-  let prevSub = {};
-  let prevEl = null
-  for(const el of Object.values(state.subtitles.entities)) {
-    if(currentSeconds >= el.start && currentSeconds < (el.next_start || 99999999)) {
-      prevSub = prevEl
-      break
-    }
-    prevEl = el
-  }
-
-  return prevSub
 }
 
-export const selectNextSubtitleBySeconds =  (state, currentSeconds) => {
-  let nextSub = {};
-  let foundCurrent = false
-  for(const el of Object.values(state.subtitles.entities)) {
-    if(foundCurrent) {
-      nextSub = el
-      break
+export const selectSubtitleByIndex =  (state, index) => {
+  console.log('select by index', index, state.subtitles.ids.length)
+  if(state.subtitles.ids.length){
+    if(index < 0) {
+      index = 0
     }
-    if(currentSeconds >= el.start && currentSeconds < (el.next_start || 99999999)) {
-      foundCurrent = true
+    if(index >= state.subtitles.ids.length) {
+      index = state.subtitles.ids.length - 1
     }
+    console.log('im herrrr', )
+    return state.subtitles.entities[state.subtitles.ids[index]]
   }
-
-  return nextSub
+  else {
+    return {'error': 'no subtitles'}
+  }
+  
 }
 
 export const {
