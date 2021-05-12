@@ -8,16 +8,12 @@ import Fab from '@material-ui/core/Fab';
 import VerticalAlignCenterIcon from '@material-ui/icons/VerticalAlignCenter';
 
 import {
-  fetchSubtitles,
-  selectAllSubtitles,
   selectSubtitleIds,
   selectSubtitleById,
   selectSubtitleBySeconds,
   selectPrevSubtitleBySeconds,
   selectNextSubtitleBySeconds,
-  addNewSubtitle,
-  updateSubtitle,
-  deleteSubtitle
+  initFromFile,
 } from './subtitlesSlice'
 
 
@@ -38,7 +34,7 @@ const Subtitle = ({ subtitleId, playerRef, currentSeconds, setCurrentSeconds }) 
         <div className="subtitle-play">
           <i className="fa fa-play-circle"></i>
         </div>
-        <div className="subtitle-text">Goodbye sanity{subtitle.text}</div>
+        <div className="subtitle-text">{subtitle.text}</div>
       </div>
       <div className={`gap`} style={{ height: (subtitle.next_start-subtitle.end) + 'em' }}></div>
     </React.Fragment>
@@ -55,11 +51,11 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
   const nextSub = useSelector((state) => selectNextSubtitleBySeconds(state, currentSeconds))
   const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
 
-  useEffect(() => {
-    if (status === 'idle') {
-      dispatch(fetchSubtitles())
-    }
-  }, [status, dispatch])
+  // useEffect(() => {
+  //   if (status === 'idle') {
+  //     dispatch(fetchSubtitles())
+  //   }
+  // }, [status, dispatch])
 
   // Autopause functionality
   const [apStatus, setApStatus] = useState(true);
@@ -81,125 +77,37 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
 
   // Add subtitle functionality
   const handleAddSubtitle = async () => {
-    const prevSubFrozen = {...prevSub}
-    const nextSubFrozen = {...nextSub}
-    const currentSubFrozen = {...currentSub}
-    const newStart = parseFloat((currentSubFrozen.prev_end + 0.05).toFixed(6))
-    const newEnd = parseFloat((currentSubFrozen.start - 0.05).toFixed(6))
-    const newNextStart = currentSubFrozen.start
-    const newPrevEnd = currentSubFrozen.prev_end
-    if (addDeleteRequestStatus === 'idle') {
-      try {
-        setAddDeleteRequestStatus('pending')
-        const newSubAction = await dispatch(
-          addNewSubtitle({ 
-            start: newStart, 
-            end: newEnd, 
-            next_start: newNextStart, 
-            prev_end: newPrevEnd, 
-            text: '', 
-            id: nanoid()
-          })
-        )
-        const prevSubUpdateAction = await dispatch(
-          updateSubtitle({ 
-            id: prevSubFrozen.id,
-            next_start: newStart,
-            start: prevSubFrozen.start,
-            end: prevSubFrozen.end,
-            prev_end: prevSubFrozen.prev_end,
-            text: prevSubFrozen.text,
-          })
-        )
-        const currentSubUpdateAction = await dispatch(
-          updateSubtitle({ 
-            id: currentSubFrozen.id,
-            prev_end: newEnd,
-            start: currentSubFrozen.start,
-            end: currentSubFrozen.end,
-            next_start: currentSubFrozen.next_start,
-            text: currentSubFrozen.text,
-          })
-        )
-        unwrapResult(newSubAction)
-        unwrapResult(prevSubUpdateAction)
-        unwrapResult(currentSubUpdateAction)
-      } catch (err) {
-        console.error('Failed to add a subtitle: ', err)
-      } finally {
-        setAddDeleteRequestStatus('idle')
-        playerRef.current.seekTo(newStart, "seconds");
-        setCurrentSeconds(newStart)
-        handleFocusSelected()
-      }
-    }
+   
   }
 
   // Delete subtitle functionality
   const handleDeleteSubtitle = async () => {
-    const prevSubFrozen = {...prevSub}
-    const nextSubFrozen = {...nextSub}
-    const currentSubFrozen = {...currentSub}
-    if (addDeleteRequestStatus === 'idle') {
-      try {
-        setAddDeleteRequestStatus('pending')
-        const deleteAction = await dispatch(
-          deleteSubtitle(currentSubFrozen.id)
-        )
-        const prevSubUpdateAction = await dispatch(
-          updateSubtitle({ 
-            id: prevSubFrozen.id,
-            next_start: nextSubFrozen.start,
-            start: prevSubFrozen.start,
-            end: prevSubFrozen.end,
-            prev_end: prevSubFrozen.prev_end,
-            text: prevSubFrozen.text,
-          })
-        )
-        const nextSubUpdateAction = await dispatch(
-          updateSubtitle({ 
-            id: currentSubFrozen.id,
-            prev_end: prevSubFrozen.end,
-            start: currentSubFrozen.start,
-            end: currentSubFrozen.end,
-            next_start: currentSubFrozen.next_start,
-            text: currentSubFrozen.text,
-          })
-        )
-        unwrapResult(deleteAction)
-        unwrapResult(prevSubUpdateAction)
-        unwrapResult(nextSubUpdateAction)
-      } catch (err) {
-        console.error('Failed to delete a subtitle: ', err)
-      } finally {
-        setAddDeleteRequestStatus('idle')
-        try {
-          playerRef.current.seekTo(prevSubFrozen.end, "seconds");
-          setCurrentSeconds(prevSubFrozen.end)
-          handleFocusSelected()
-        } catch {
-          
-        }
-        
-      }
-    }
+    
+  }
+
+  const seedFromSRT = async (e) => {
+    e.preventDefault()
+    const reader = new FileReader()
+    reader.onload = async (e) => { 
+      const text = (e.target.result)
+      dispatch(initFromFile(text))
+    };
+    reader.readAsText(e.target.files[0])
   }
 
   let content
-  if (status === 'loading') {
-    content = <div className="loader">Loading...</div>
-  } else if (status === 'succeeded') {
+  if (subtitleIds.length) {
     content = subtitleIds.map((subtitleId) => (
       <Subtitle key={subtitleId} subtitleId={subtitleId} playerRef={playerRef} currentSeconds={currentSeconds} setCurrentSeconds={setCurrentSeconds}/>
     ))
-  } else if (status === 'error') {
-    content = <div>{error}</div>
+  } else {
+    content = <div> No subtitles </div>
   }
 
 
   return (
     <section className="subtitles">
-      <div className="options">
+      <div className={`options ${subtitleIds.length ? '': 'hidden'}`}>
         <div className="option option-autopause">
           <span>Auto Pause</span><br/>
           <Switch onChange={handleToggleAP} checked={apStatus} />
@@ -221,6 +129,12 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
           <i className="fa fa-trash"></i>
         </div>
       </div >
+      <div className={`options ${subtitleIds.length ? 'hidden': ''}`}>
+        <div className="option"> 
+          <span>Seed from SRT</span><br/>
+          <input type="file" onChange={seedFromSRT} />
+        </div>
+      </div>
       <Fab color="primary" id="fab" aria-label="add" onClick={handleFocusSelected}>
         <VerticalAlignCenterIcon />
       </Fab>

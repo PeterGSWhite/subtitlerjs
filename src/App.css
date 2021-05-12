@@ -5,6 +5,7 @@
   top: calc(5em + 12px);
 }
 
+
 .debugstring {
   position: absolute;
   top: 5em;
@@ -54,6 +55,7 @@
  overflow-y: auto;
  overflow-x: hidden;
  text-align: left;
+ background-color: black;
 }
 
 .subtitles {
@@ -130,6 +132,10 @@
 
 .App-link {
   color: rgb(112, 76, 182);
+}
+
+.hidden {
+  display: none;
 }
 
 @keyframes App-logo-float {
