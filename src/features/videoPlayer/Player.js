@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect  } from "react";
 import ReactPlayer from "react-player";
 
-export const Player = ({playerRef, onProgress}) => {
+export const Player = ({playerRef, onProgress, currentSub}) => {
   const [videoFilePath, setVideoPath] = useState(null);
 
   useEffect(() => {
@@ -15,6 +15,9 @@ export const Player = ({playerRef, onProgress}) => {
 
   return (
     <div className="playerContainer">
+      <div class="display-current-sub">
+        <em>{currentSub}</em>
+      </div>
       <ReactPlayer className="player"
         url={videoFilePath}
         ref={playerRef}

@@ -5,7 +5,6 @@
   top: calc(5em + 12px);
 }
 
-
 .debugstring {
   position: absolute;
   top: 5em;
@@ -130,22 +129,19 @@
   font-size: calc(10px + 2vmin);
 }
 
-.App-link {
-  color: rgb(112, 76, 182);
-}
 
 .hidden {
   display: none;
 }
 
-@keyframes App-logo-float {
-  0% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(10px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
+.display-current-sub {
+  position: absolute;
+  top: 90vh;
+  left: 0;
+  width: 100%;
+  height: fit-content;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white !important;
+  font-size: 24px;
+  z-index: 1000;
 }

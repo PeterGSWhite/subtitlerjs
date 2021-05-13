@@ -6,7 +6,7 @@ import 'font-awesome/css/font-awesome.min.css';
 import Switch from "react-switch";
 import Fab from '@material-ui/core/Fab';
 import VerticalAlignCenterIcon from '@material-ui/icons/VerticalAlignCenter';
-import { HotKeys } from "react-hotkeys";
+import { useHotkeys } from "react-hotkeys-hook";
 
 import {
   initFromFile,
@@ -42,7 +42,7 @@ const Subtitle = ({ subtitleId, playerRef, currentSeconds, setCurrentSeconds }) 
   )
 }
 
-export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => {
+export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setCurrentSub}) => {
   const subtitleIds = useSelector(selectSubtitleIds)
   const dispatch = useDispatch()
   const currentId = useSelector((state) => selectIdBySeconds(state, currentSeconds))
@@ -53,26 +53,26 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
   const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
   
   // Hotkey logic
-  const goPrevious = React.useCallback(() => {
+  useHotkeys('left,a', () => {
     console.log('go previous', prev)
-    // playerRef.current.seekTo(playhead[0].start, "seconds");
-    // setCurrentSeconds(playhead[0].start)
-  }, [])
-  const goNext = React.useCallback(() => {
+    playerRef.current.seekTo(prev.start, "seconds");
+    setCurrentSeconds(prev.start)
+  }, [prev]);
+  useHotkeys('right,d', () => {
     console.log('go next', next)
-    // playerRef.current.seekTo(playhead[2].start, "seconds");
-    // setCurrentSeconds(playhead[2].start)
-  }, [])
+    playerRef.current.seekTo(next.start, "seconds");
+    setCurrentSeconds(next.start)
+  }, [next]);
+  useHotkeys('down,s', () => {
+    console.log('replay', current)
+    playerRef.current.seekTo(current.start, "seconds");
+    setCurrentSeconds(current.start)
+  }, [current]);
+
   
-  const handlers = {
-    GO_PREVIOUS: goPrevious,
-    GO_NEXT: goNext
-  };
-  // useEffect(() => {
-  //   if (status === 'idle') {
-  //     dispatch(fetchSubtitles())
-  //   }
-  // }, [status, dispatch])
+  useEffect(() => {
+    setCurrentSub(current.text);
+  }, [current])
 
   // Autopause functionality
   const [apStatus, setApStatus] = useState(true);
@@ -123,7 +123,6 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
 
 
   return (
-    <HotKeys handlers={handlers} allowChanges={true}>
     <section className="subtitles">
       <div className={`options ${subtitleIds.length ? '': 'hidden'}`}>
         <div className="option option-autopause">
@@ -161,6 +160,5 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds}) => 
         {content}
       </div>
     </section>
-    </HotKeys>
   )
 }
