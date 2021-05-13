@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect  } from "react";
 import ReactPlayer from "react-player";
 
-export const Player = ({playerRef, onProgress, currentSub}) => {
+export const Player = ({playerRef, onProgress, currentSub, playing, setPlaying}) => {
   const [videoFilePath, setVideoPath] = useState(null);
 
   useEffect(() => {
@@ -22,9 +22,13 @@ export const Player = ({playerRef, onProgress, currentSub}) => {
         url={videoFilePath}
         ref={playerRef}
         onProgress={onProgress}
+        progressInterval={50}
         width="100%"
         height="100%"
         controls={true}
+        playing={playing}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
       />
     </div>
   );

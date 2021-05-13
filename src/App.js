@@ -19,6 +19,8 @@ function App() {
   // const currentSeconds = useRef()
   const [currentSeconds, setCurrentSeconds] = useState(0)
   const [currentSub, setCurrentSub] = useState('')
+  const [playing, setPlaying] = useState(false)
+  
 
   const onProgress = (progress) => {
     console.log(progress.playedSeconds)
@@ -35,8 +37,8 @@ function App() {
             path="/"
             render={() => (
               <React.Fragment>
-                <Player playerRef={playerRef} onProgress={onProgress} currentSub={currentSub}/>
-                <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds} setCurrentSeconds={setCurrentSeconds} setCurrentSub={setCurrentSub}/>
+                <Player playerRef={playerRef} onProgress={onProgress} currentSub={currentSub} playing={playing} setPlaying={setPlaying} />
+                <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds} setCurrentSeconds={setCurrentSeconds} setCurrentSub={setCurrentSub} setPlaying={setPlaying}/>
               </React.Fragment>
             )}
           />

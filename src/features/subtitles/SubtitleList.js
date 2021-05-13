@@ -42,7 +42,7 @@ const Subtitle = ({ subtitleId, playerRef, currentSeconds, setCurrentSeconds }) 
   )
 }
 
-export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setCurrentSub}) => {
+export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setCurrentSub, setPlaying}) => {
   const subtitleIds = useSelector(selectSubtitleIds)
   const dispatch = useDispatch()
   const currentId = useSelector((state) => selectIdBySeconds(state, currentSeconds))
@@ -50,34 +50,53 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   const prev = useSelector((state) => selectSubtitleByIndex(state, currentIndex - 1))
   const current = useSelector((state) => selectSubtitleByIndex(state, currentIndex))
   const next = useSelector((state) => selectSubtitleByIndex(state, currentIndex + 1))
+  const [AP, setAP] = useState(true)
+  const [ignoreAPUntil, setIgnoreAPUntil] = useState(-1)
   const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
   
   // Hotkey logic
   useHotkeys('left,a', () => {
-    console.log('go previous', prev)
     playerRef.current.seekTo(prev.start, "seconds");
     setCurrentSeconds(prev.start)
+    setPlaying(true)
   }, [prev]);
   useHotkeys('right,d', () => {
-    console.log('go next', next)
     playerRef.current.seekTo(next.start, "seconds");
     setCurrentSeconds(next.start)
+    setPlaying(true)
   }, [next]);
   useHotkeys('down,s', () => {
-    console.log('replay', current)
     playerRef.current.seekTo(current.start, "seconds");
     setCurrentSeconds(current.start)
+    setPlaying(true)
   }, [current]);
-
+  useHotkeys('up,w', () => {
+    setIgnoreAPUntil(current.end)
+    setPlaying(true)
+  }, [current]);
   
   useEffect(() => {
     setCurrentSub(current.text);
   }, [current])
 
+  // Auto pause logic
+  useEffect(() => {
+    let boundary = 0.12;
+    console.log(currentSeconds, current, boundary, ignoreAPUntil)
+    if(ignoreAPUntil > -1) {
+      if(currentSeconds > ignoreAPUntil){
+        setIgnoreAPUntil(-1)
+      }
+    }
+    else if(AP && currentSeconds >= current.end - boundary) {
+      console.log('hit!!')
+      setPlaying(false)
+    }
+  }, [currentSeconds, AP, ignoreAPUntil])
+
   // Autopause functionality
-  const [apStatus, setApStatus] = useState(true);
   const handleToggleAP = () => {
-    setApStatus(!apStatus);
+    setAP(!AP);
   }
 
   // Focus selected functionality
@@ -127,7 +146,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
       <div className={`options ${subtitleIds.length ? '': 'hidden'}`}>
         <div className="option option-autopause">
           <span>Auto Pause</span><br/>
-          <Switch onChange={handleToggleAP} checked={apStatus} />
+          <Switch onChange={handleToggleAP} checked={AP} />
         </div>
         <div className="option option-addabove" onClick={handleAddSubtitle}>
           <span>Add above</span><br/>

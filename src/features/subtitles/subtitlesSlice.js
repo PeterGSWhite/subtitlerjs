@@ -68,16 +68,13 @@ const subtitlesSlice = createSlice({
 
 
 export const selectIdBySeconds =  (state, seconds) => {
-  console.log('getting id', seconds, state.subtitles.entities)
   let currentSub = {};
   for(const el of Object.values(state.subtitles.entities)) {
-    console.log('entity', el)
     if(seconds >= el.start && seconds < (el.next_start || 99999999)) {
       currentSub = el
       break
     }
   }
-  console.log('sub', currentSub.id)
   return currentSub.id
 }
 
@@ -92,7 +89,6 @@ export const selectIndexbyId =  (state, currentId) => {
 }
 
 export const selectSubtitleByIndex =  (state, index) => {
-  console.log('select by index', index, state.subtitles.ids.length)
   if(state.subtitles.ids.length){
     if(index < 0) {
       index = 0
@@ -100,7 +96,6 @@ export const selectSubtitleByIndex =  (state, index) => {
     if(index >= state.subtitles.ids.length) {
       index = state.subtitles.ids.length - 1
     }
-    console.log('im herrrr', )
     return state.subtitles.entities[state.subtitles.ids[index]]
   }
   else {
