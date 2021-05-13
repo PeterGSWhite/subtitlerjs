@@ -62,6 +62,13 @@ const subtitlesSlice = createSlice({
           }
         }
       }
+    },
+    deleteSubtitle(state, action) {
+      subtitlesAdapter.removeOne(state, action.payload.currentId)
+      subtitlesAdapter.updateMany(state, [action.payload.nextSub, action.payload.prevSub])
+    },
+    updateSubtitle(state, action) {
+      subtitlesAdapter.updateOne(state, action.payload)
     }  
   },
 })
@@ -105,7 +112,9 @@ export const selectSubtitleByIndex =  (state, index) => {
 }
 
 export const {
-  initFromFile
+  initFromFile,
+  deleteSubtitle,
+  updateSubtitle
 } = subtitlesSlice.actions
 
 export default subtitlesSlice.reducer

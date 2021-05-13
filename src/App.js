@@ -23,7 +23,6 @@ function App() {
   
 
   const onProgress = (progress) => {
-    console.log(progress.playedSeconds)
     setCurrentSeconds(progress.playedSeconds)
   }
 

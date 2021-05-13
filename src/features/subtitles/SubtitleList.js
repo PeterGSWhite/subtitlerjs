@@ -14,7 +14,9 @@ import {
   selectSubtitleById,
   selectIdBySeconds,
   selectIndexbyId,
-  selectSubtitleByIndex
+  selectSubtitleByIndex,
+  deleteSubtitle,
+  updateSubtitle
 } from './subtitlesSlice'
 
 
@@ -35,7 +37,7 @@ const Subtitle = ({ subtitleId, playerRef, currentSeconds, setCurrentSeconds }) 
         <div className="subtitle-play">
           <i className="fa fa-play-circle"></i>
         </div>
-        <div className="subtitle-text">{subtitle.text}</div>
+        <div className="subtitle-text">{subtitle.prev_end}-  -{subtitle.start}:{subtitle.end}  -  -{subtitle.next_start}  {subtitle.text}</div>
       </div>
       <div className={`gap`} style={{ height: (subtitle.next_start-subtitle.end) + 'em' }}></div>
     </React.Fragment>
@@ -51,29 +53,29 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   const current = useSelector((state) => selectSubtitleByIndex(state, currentIndex))
   const next = useSelector((state) => selectSubtitleByIndex(state, currentIndex + 1))
   const [AP, setAP] = useState(true)
-  const [ignoreAPUntil, setIgnoreAPUntil] = useState(-1)
+  const [alreadyPausedId, setAlreadyPausedId] = useState('')
   const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
   
+  const setPlayhead = (seconds) => {
+    playerRef.current.seekTo(seconds, "seconds");
+    setCurrentSeconds(seconds)
+    setPlaying(true)
+    setAlreadyPausedId('')
+  }
+
   // Hotkey logic
   useHotkeys('left,a', () => {
-    playerRef.current.seekTo(prev.start, "seconds");
-    setCurrentSeconds(prev.start)
-    setPlaying(true)
+    setPlayhead(prev.start)
   }, [prev]);
   useHotkeys('right,d', () => {
-    playerRef.current.seekTo(next.start, "seconds");
-    setCurrentSeconds(next.start)
-    setPlaying(true)
+    setPlayhead(next.start)
   }, [next]);
   useHotkeys('down,s', () => {
-    playerRef.current.seekTo(current.start, "seconds");
-    setCurrentSeconds(current.start)
-    setPlaying(true)
-  }, [current]);
+    setPlayhead(current.start)
+  }, [current, alreadyPausedId]);
   useHotkeys('up,w', () => {
-    setIgnoreAPUntil(current.end)
     setPlaying(true)
-  }, [current]);
+  });
   
   useEffect(() => {
     setCurrentSub(current.text);
@@ -81,18 +83,16 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
 
   // Auto pause logic
   useEffect(() => {
-    let boundary = 0.12;
-    console.log(currentSeconds, current, boundary, ignoreAPUntil)
-    if(ignoreAPUntil > -1) {
-      if(currentSeconds > ignoreAPUntil){
-        setIgnoreAPUntil(-1)
-      }
+    let boundary = 0.15;
+    if(alreadyPausedId === current.id) {
+      console.log('already paused here')
     }
     else if(AP && currentSeconds >= current.end - boundary) {
       console.log('hit!!')
       setPlaying(false)
+      setAlreadyPausedId(current.id)
     }
-  }, [currentSeconds, AP, ignoreAPUntil])
+  }, [currentSeconds, current, AP, alreadyPausedId])
 
   // Autopause functionality
   const handleToggleAP = () => {
@@ -102,7 +102,6 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   // Focus selected functionality
   const handleFocusSelected = () => {
     document.getElementsByClassName("subtitles-list")[0].focus();
-    console.log(document.getElementsByClassName("selected")[0])
     try {
       document.getElementsByClassName("selected")[0].scrollIntoView({behavior: 'smooth'});
     } catch {
@@ -117,8 +116,29 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   }
 
   // Delete subtitle functionality
-  const handleDeleteSubtitle = async () => {
-    
+  const handleDeleteSubtitle = () => {
+    dispatch(deleteSubtitle({
+      currentId: current.id,
+      nextSub: {
+        id: next.id,
+        changes: {prev_end: prev.end}
+      },
+      prevSub: {
+        id: prev.id,
+        changes: {next_start: next.start}
+      }
+
+    }))
+    setPlayhead(next.start)
+  }
+
+  const handleEditSubtitle = () => {
+    dispatch(updateSubtitle({
+      id: current.id,
+      changes: {text:'booooogoooowaaaaa'}
+
+    }))
+    setPlayhead(current.start)
   }
 
   const seedFromSRT = async (e) => {
@@ -156,7 +176,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
           <span>Add below</span><br/>
           <i className="fa fa-arrow-circle-down"></i>
         </div>
-        <div className="option option-edit" onClick={handleToggleAP} >
+        <div className="option option-edit" onClick={handleEditSubtitle} >
           <span>Edit</span><br/>
           <i className="fa fa-edit"></i>
         </div>

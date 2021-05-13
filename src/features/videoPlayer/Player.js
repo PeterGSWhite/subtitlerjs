@@ -15,7 +15,7 @@ export const Player = ({playerRef, onProgress, currentSub, playing, setPlaying})
 
   return (
     <div className="playerContainer">
-      <div class="display-current-sub">
+      <div className="display-current-sub">
         <em>{currentSub}</em>
       </div>
       <ReactPlayer className="player"
