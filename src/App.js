@@ -36,8 +36,8 @@ function App() {
             path="/"
             render={() => (
               <React.Fragment>
-                <Player playerRef={playerRef} onProgress={onProgress} currentSub={currentSub} playing={playing} setPlaying={setPlaying} />
-                <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds} setCurrentSeconds={setCurrentSeconds} setCurrentSub={setCurrentSub} setPlaying={setPlaying}/>
+                <Player playerRef={playerRef} onProgress={onProgress} currentSub={currentSub} playing={playing} setPlaying={setPlaying} tabIndex="-1"/>
+                <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds} setCurrentSeconds={setCurrentSeconds} setCurrentSub={setCurrentSub} setPlaying={setPlaying} tabIndex="-1"/>
               </React.Fragment>
             )}
           />

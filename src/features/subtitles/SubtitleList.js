@@ -7,6 +7,7 @@ import Switch from "react-switch";
 import Fab from '@material-ui/core/Fab';
 import VerticalAlignCenterIcon from '@material-ui/icons/VerticalAlignCenter';
 import { useHotkeys } from "react-hotkeys-hook";
+import TextField from '@material-ui/core/TextField';
 
 import {
   initFromFile,
@@ -20,28 +21,65 @@ import {
 } from './subtitlesSlice'
 
 
-const Subtitle = ({ subtitleId, playerRef, currentSeconds, setCurrentSeconds }) => {
+const Subtitle = ({ subtitleId, playerRef, selected, setCurrentSeconds, hotkeyMode, setHotkeyMode }) => {
+  const dispatch = useDispatch()
   const subtitle = useSelector((state) => selectSubtitleById(state, subtitleId))
+  // var selected = currentSeconds < (subtitle.next_start || 99999999) && currentSeconds >= subtitle.start
+  var gap = (subtitle.next_start-subtitle.end) + 'em'
 
   const handlePlayClick = () => {
     playerRef.current.seekTo(subtitle.start, "seconds");
     setCurrentSeconds(subtitle.start)
   }
-
-  return (
-    <React.Fragment>
-      <div 
-        className={`subtitle ${currentSeconds < (subtitle.next_start || 99999999) && currentSeconds >= subtitle.start ? 'selected' : ''}`}
-        onClick={handlePlayClick} 
-      >
-        <div className="subtitle-play">
-          <i className="fa fa-play-circle"></i>
+  const handleTextChange = (e) => {
+    dispatch(updateSubtitle({
+      id: subtitle.id,
+      changes: {text: e.target.value}
+    }))
+  }
+  const handleSwitchMode = () => {
+    setHotkeyMode(true)
+  }
+  if(hotkeyMode || !selected) {
+    return (
+      <React.Fragment>
+        <div 
+          className={`subtitle ${selected ? 'selected' : ''}`}
+          onClick={handlePlayClick} 
+        >
+          <div className="subtitle-play">
+            <i className="fa fa-play-circle"></i>
+          </div>
+          <div className="subtitle-text">{subtitle.text}</div>
         </div>
-        <div className="subtitle-text">{subtitle.prev_end}-  -{subtitle.start}:{subtitle.end}  -  -{subtitle.next_start}  {subtitle.text}</div>
-      </div>
-      <div className={`gap`} style={{ height: (subtitle.next_start-subtitle.end) + 'em' }}></div>
-    </React.Fragment>
-  )
+        <div className={`gap`} style={{ height: gap }}></div>
+      </React.Fragment>
+    )
+  } else {
+    return (
+      <React.Fragment>
+        <div 
+          className={`subtitle ${selected ? 'selected' : ''}`}
+        >
+          <TextField 
+            InputProps={{ style: {  color: 'white'}}} 
+            className="selected-input"
+            label="Edit subtitle" 
+            value={subtitle.text} 
+            onChange={handleTextChange}
+            autoFocus
+            fullWidth
+            multiline
+            onKeyUp={(event) => {
+              if (event.key == 'Enter')
+                handleSwitchMode()
+            }}
+          />
+        </div>
+        <div className={`gap`} style={{ height: gap }}></div>
+      </React.Fragment>
+    )
+  }
 }
 
 export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setCurrentSub, setPlaying}) => {
@@ -52,6 +90,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   const prev = useSelector((state) => selectSubtitleByIndex(state, currentIndex - 1))
   const current = useSelector((state) => selectSubtitleByIndex(state, currentIndex))
   const next = useSelector((state) => selectSubtitleByIndex(state, currentIndex + 1))
+  const [hotkeyMode, setHotkeyMode] = useState(true)
   const [AP, setAP] = useState(true)
   const [alreadyPausedId, setAlreadyPausedId] = useState('')
   const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
@@ -64,22 +103,51 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   }
 
   // Hotkey logic
-  useHotkeys('left,a', () => {
-    setPlayhead(prev.start)
-  }, [prev]);
-  useHotkeys('right,d', () => {
-    setPlayhead(next.start)
-  }, [next]);
-  useHotkeys('down,s', () => {
-    setPlayhead(current.start)
-  }, [current, alreadyPausedId]);
-  useHotkeys('up,w', () => {
-    setPlaying(true)
+  useHotkeys('left, a', (e) => {
+    e.preventDefault()
+    if(hotkeyMode) {
+      setPlayhead(prev.start)
+    }
+  }, [prev, hotkeyMode]);
+  useHotkeys('right, d', (e) => {
+    e.preventDefault()
+    if(hotkeyMode) {
+      setPlayhead(next.start)
+    }
+  }, [next, hotkeyMode]);
+  useHotkeys('down, s', (e) => {
+    e.preventDefault()
+    if(hotkeyMode) {
+      setPlayhead(current.start)
+    }
+  }, [current, alreadyPausedId, hotkeyMode]);
+  useHotkeys('up, w', (e) => {
+    e.preventDefault()
+    if(hotkeyMode) {
+      setPlaying(true) 
+    }
+  }, [hotkeyMode]);
+  useHotkeys('i', (e) => {
+    e.preventDefault()
+    setHotkeyMode(false)
   });
-  
+  useHotkeys('esc', (e) => {
+    
+    e.preventDefault()
+    console.log('outside')
+    setHotkeyMode(true)
+  });
   useEffect(() => {
     setCurrentSub(current.text);
   }, [current])
+
+  useEffect(() => {
+    if(subtitleIds.length) {
+      if(hotkeyMode) {
+        // document.getElementsByClassName("selected")[0].focus();
+      }
+    }
+  }, [hotkeyMode, subtitleIds])
 
   // Auto pause logic
   useEffect(() => {
@@ -151,10 +219,11 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
     reader.readAsText(e.target.files[0])
   }
 
+  // Subtitles
   let content
   if (subtitleIds.length) {
     content = subtitleIds.map((subtitleId) => (
-      <Subtitle key={subtitleId} subtitleId={subtitleId} playerRef={playerRef} currentSeconds={currentSeconds} setCurrentSeconds={setCurrentSeconds}/>
+      <Subtitle key={subtitleId} subtitleId={subtitleId} playerRef={playerRef} selected={subtitleId === current.id} setCurrentSeconds={setCurrentSeconds} hotkeyMode={hotkeyMode} setHotkeyMode={setHotkeyMode}/>
     ))
   } else {
     content = <div> No subtitles </div>
