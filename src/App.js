@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import {
   BrowserRouter as Router,
   Switch,
@@ -20,7 +20,8 @@ function App() {
   const [currentSeconds, setCurrentSeconds] = useState(0)
   const [currentSub, setCurrentSub] = useState('')
   const [playing, setPlaying] = useState(false)
-  
+  const [muted, setMuted] = useState(false)
+  const [playbackRate, setPlaybackRate] = useState(1)
 
   const onProgress = (progress) => {
     setCurrentSeconds(progress.playedSeconds)
@@ -36,8 +37,26 @@ function App() {
             path="/"
             render={() => (
               <React.Fragment>
-                <Player playerRef={playerRef} onProgress={onProgress} currentSub={currentSub} playing={playing} setPlaying={setPlaying} tabIndex="-1"/>
-                <SubtitleList playerRef={playerRef} currentSeconds={currentSeconds} setCurrentSeconds={setCurrentSeconds} setCurrentSub={setCurrentSub} setPlaying={setPlaying} tabIndex="-1"/>
+                <Player 
+                  playerRef={playerRef} 
+                  onProgress={onProgress} 
+                  currentSub={currentSub} 
+                  playbackRate={playbackRate}
+                  muted={muted} 
+                  playing={playing} 
+                  setPlaying={setPlaying} 
+                  tabIndex="-1"
+                />
+                <SubtitleList 
+                  playerRef={playerRef} 
+                  currentSeconds={currentSeconds} 
+                  setCurrentSeconds={setCurrentSeconds} 
+                  setCurrentSub={setCurrentSub} 
+                  setPlaybackRate={setPlaybackRate}
+                  setMuted={setMuted} 
+                  setPlaying={setPlaying} 
+                  tabIndex="-1"
+                />
               </React.Fragment>
             )}
           />

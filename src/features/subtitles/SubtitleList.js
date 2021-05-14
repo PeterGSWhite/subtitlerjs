@@ -37,7 +37,8 @@ const Subtitle = ({ subtitleId, playerRef, selected, setCurrentSeconds, hotkeyMo
       changes: {text: e.target.value}
     }))
   }
-  const handleSwitchMode = () => {
+  const handleSwitchMode = (e) => {
+    e.preventDefault()
     setHotkeyMode(true)
   }
   if(hotkeyMode || !selected) {
@@ -70,9 +71,9 @@ const Subtitle = ({ subtitleId, playerRef, selected, setCurrentSeconds, hotkeyMo
             autoFocus
             fullWidth
             multiline
-            onKeyUp={(event) => {
-              if (event.key == 'Enter')
-                handleSwitchMode()
+            onKeyDown={(event) => {
+              if (event.key == 'Escape' || !event.shiftKey && event.key == 'Enter')
+                handleSwitchMode(event)
             }}
           />
         </div>
@@ -82,7 +83,7 @@ const Subtitle = ({ subtitleId, playerRef, selected, setCurrentSeconds, hotkeyMo
   }
 }
 
-export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setCurrentSub, setPlaying}) => {
+export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setCurrentSub, setPlaybackRate, setMuted, setPlaying}) => {
   const subtitleIds = useSelector(selectSubtitleIds)
   const dispatch = useDispatch()
   const currentId = useSelector((state) => selectIdBySeconds(state, currentSeconds))
@@ -103,6 +104,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   }
 
   // Hotkey logic
+  // Subtitle navigation
   useHotkeys('left, a', (e) => {
     e.preventDefault()
     if(hotkeyMode) {
@@ -131,11 +133,19 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
     e.preventDefault()
     setHotkeyMode(false)
   });
-  useHotkeys('esc', (e) => {
-    
+
+  // Video controls
+  useHotkeys('m', (e) => {
     e.preventDefault()
-    console.log('outside')
-    setHotkeyMode(true)
+    setMuted(prev => !prev)
+  });
+  useHotkeys('shift+.', (e) => {
+    e.preventDefault()
+    setPlaybackRate(prev => Math.min(2, prev+0.25))
+  });
+  useHotkeys('shift+,', (e) => {
+    e.preventDefault()
+    setPlaybackRate(prev => Math.max(0.25, prev-0.25))
   });
   useEffect(() => {
     setCurrentSub(current.text);
