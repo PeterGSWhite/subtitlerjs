@@ -31,6 +31,7 @@ export const Player = ({playerRef, onProgress, currentSub, playbackRate, muted, 
         playing={playing}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
+        pip={false}
       />
     </div>
   );

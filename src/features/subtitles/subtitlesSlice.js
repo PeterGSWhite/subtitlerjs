@@ -37,8 +37,8 @@ const subtitlesSlice = createSlice({
         let subtitles = []
         let index = 0
         for(let match of filebody.matchAll(re)){
-          let startSeconds = parseInt(match[2])*3600 + parseInt(match[3])*60 + parseInt(match[4]) + parseInt(match[5])/1000;
-          let endSeconds = parseInt(match[6])*3600 + parseInt(match[7])*60 + parseInt(match[8]) + parseInt(match[9])/1000;
+          let startSeconds = parseFloat((parseInt(match[2])*3600 + parseInt(match[3])*60 + parseInt(match[4]) + parseInt(match[5])/1000).toFixed(6));
+          let endSeconds = parseFloat((parseInt(match[6])*3600 + parseInt(match[7])*60 + parseInt(match[8]) + parseInt(match[9])/1000).toFixed(6));
           let text = match[10]
           let prevEnd = null
           
@@ -67,8 +67,24 @@ const subtitlesSlice = createSlice({
       subtitlesAdapter.removeOne(state, action.payload.currentId)
       subtitlesAdapter.updateMany(state, [action.payload.nextSub, action.payload.prevSub])
     },
-    updateSubtitle(state, action) {
-      subtitlesAdapter.updateOne(state, action.payload)
+    updateSubtitle:{
+      reducer(state, action) {
+        subtitlesAdapter.updateOne(state, action.payload)
+      },
+      prepare(j) {
+        let changes = {...j.changes}
+        for(let key of ['start', 'end', 'next_start', 'next_end']) {
+          if(changes[key]) {
+            changes[key] =  parseFloat(changes[key].toFixed(6))
+          }
+        }
+        return {
+          payload: {
+            id: j.id,
+            changes: changes
+          }
+        }
+      }
     }  
   },
 })
