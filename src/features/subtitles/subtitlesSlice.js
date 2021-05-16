@@ -22,29 +22,12 @@ const subtitlesSlice = createSlice({
   name: 'subtitles',
   initialState: subtitlesAdapter.getInitialState(
     {
-      ids: ['startanchor', 'endanchor'],
-      entities: {
-        startanchor: {
-          id: 'startanchor',
-          start: 0,
-          end: 0,
-          next_start: 9999999999,
-          text: ''
-        },
-        endanchor: {
-          id: 'endanchor',
-          start: 9999999999,
-          end: 9999999999,
-          prev_end: 0,
-          text: ''
-        }
-      }
+      subtitles: []
     }  
   ),
   reducers: {
     initFromFile: {
       reducer(state, action) {
-        subtitlesAdapter.removeAll(state);
         subtitlesAdapter.addMany(state, action.payload.subtitles);
       },
       prepare(filebody) {
@@ -113,7 +96,7 @@ const subtitlesSlice = createSlice({
 
 
 export const selectIdBySeconds =  (state, seconds) => {
-  let currentSub = {id: 'startanchor'};
+  let currentSub = {};
   for(const el of Object.values(state.subtitles.entities)) {
     if(seconds >= el.start && seconds < (el.next_start || 99999999)) {
       currentSub = el

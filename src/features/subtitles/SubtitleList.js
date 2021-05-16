@@ -59,7 +59,7 @@ const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, 
     e.preventDefault()
     setHotkeyMode(true)
   }
-  if(realtimeSubtitle.id !== 'startanchor' && realtimeSubtitle.id !== 'endanchor') {
+  if(realtimeSubtitle.id !== 'prevanchor' && realtimeSubtitle.id !== 'currentanchor' && realtimeSubtitle.id !== 'nextanchor') {
     if(hotkeyMode || !selected) {
       return (
         <React.Fragment>
@@ -111,9 +111,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   const currentId = useSelector((state) => selectIdBySeconds(state, currentSeconds))
   const currentIndex = useSelector((state) => selectIndexbyId(state, currentId))
   const prev = useSelector((state) => selectSubtitleByIndex(state, currentIndex - 1))
-  console.log('currein', currentIndex)
   const current = useSelector((state) => selectSubtitleByIndex(state, currentIndex))
-  console.log('curfeferein', current)
   const next = useSelector((state) => selectSubtitleByIndex(state, currentIndex + 1))
   const [hotkeyMode, setHotkeyMode] = useState(true)
   const [AP, setAP] = useState(true)
@@ -121,9 +119,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
   
   const setPlayhead = (seconds, playheadBuffer=0.05) => {
-    console.log(typeof(playheadBuffer), typeof(seconds))
     seconds += playheadBuffer
-    console.log('SETTING PLAYHEAD', seconds)
     playerRef.current.seekTo(seconds, "seconds");
     setCurrentSeconds(seconds)
     setPlaying(true)
@@ -174,8 +170,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
       let oldCurrentPrevEnd = current.prev_end
       let newEnd = Math.max(current.start - paddingSeconds, oldCurrentPrevEnd, 0);
       let newStart = Math.max(newEnd - defaultSubSize, oldCurrentPrevEnd, 0)
-      console.log(newStart, newEnd)
-      if(newEnd - newStart > minSubSize) {
+      if(newEnd - newStart > minSubSize || current.id === 'prevanchor' || current.id === 'currentanchor' || current.id === 'nextanchor') {
         dispatch(addSubtitle({
           start: newStart,
           end: newEnd,
@@ -199,11 +194,10 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   useHotkeys('shift+d, shift+right', (e) => { 
     e.preventDefault()
     if(hotkeyMode) {
-      let oldCurrentNextStart = current.next_start || current.end + maxSubSize
+      let oldCurrentNextStart = current.next_start || current.end + paddingSeconds
       let newStart = Math.min(current.end + paddingSeconds, oldCurrentNextStart);
       let newEnd = Math.min(newStart + defaultSubSize, oldCurrentNextStart);
-      console.log(current.next_start, newStart, newEnd)
-      if(newEnd - newStart > minSubSize) {
+      if(newEnd - newStart > minSubSize || current.id === 'prevanchor' || current.id === 'currentanchor' || current.id === 'nextanchor') {
         dispatch(addSubtitle({
           start: newStart,
           end: newEnd,
@@ -227,11 +221,11 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   useHotkeys('enter', (e) => { 
     e.preventDefault()
     if(hotkeyMode) {
-      let oldCurrentNextStart = current.next_start || current.end + maxSubSize
+      let oldCurrentNextStart = current.next_start || current.end + paddingSeconds
       let newStart = currentSeconds;
       let newEnd = Math.min(newStart + defaultSubSize, oldCurrentNextStart);
       console.log(current.next_start, newStart, newEnd)
-      if(newEnd - newStart > minSubSize) {
+      if(newEnd - newStart > minSubSize || current.id === 'prevanchor' || current.id === 'currentanchor' || current.id === 'nextanchor' ) {
         dispatch(addSubtitle({
           start: newStart,
           end: newEnd,
@@ -307,12 +301,10 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   }, [hotkeyMode, current, prev]);
   // Shrink up
   useHotkeys('alt+w, alt+up', (e) => {
-    console.log('eee eee', e)
     e.preventDefault()
     if(hotkeyMode) {
       let newEnd = Math.min(current.end - extensionAmount, current.start + 0.25);
       if(newEnd - current.end) {
-        console.log('fff')
         dispatch(updateSubtitle({
           id: current.id,
           changes: {end: newEnd}
@@ -406,10 +398,8 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   useEffect(() => {
     let boundary = 0.15;
     if(alreadyPausedId === current.id) {
-      console.log('already paused here')
     }
     else if(AP && currentSeconds >= current.end - boundary) {
-      console.log('hit!!')
       setPlaying(false)
       setAlreadyPausedId(current.id)
     }
@@ -523,7 +513,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
         <VerticalAlignCenterIcon />
       </Fab>
       <div className="subtitles-list">
-        <p className="debugstring">prev.end: {prev.end} curr.pe: {current.prev_end}  prev.ns: {prev.next_start}  curr.st: {current.start}</p>
+        {/* <p className="debugstring">prev.end: {prev.end} curr.pe: {current.prev_end}  prev.ns: {prev.next_start}  curr.st: {current.start}</p> */}
         {content}
       </div>
     </section>
