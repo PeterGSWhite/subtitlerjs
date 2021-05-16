@@ -8,9 +8,11 @@ import Fab from '@material-ui/core/Fab';
 import VerticalAlignCenterIcon from '@material-ui/icons/VerticalAlignCenter';
 import { useHotkeys } from "react-hotkeys-hook";
 import TextField from '@material-ui/core/TextField';
+import {absoluteMinimum} from './utilityFunctions'
 
 import {
   initFromFile,
+  addSubtitle,
   selectSubtitleIds,
   selectSubtitleById,
   selectIdBySeconds,
@@ -57,45 +59,49 @@ const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, 
     e.preventDefault()
     setHotkeyMode(true)
   }
-  if(hotkeyMode || !selected) {
-    return (
-      <React.Fragment>
-        <div 
-          className={`subtitle ${selected ? 'selected' : ''}`}
-          onClick={handlePlayClick} 
-        >
-          <div className="subtitle-play">
-            <i className="fa fa-play-circle"></i>
+  if(realtimeSubtitle.id !== 'startanchor' && realtimeSubtitle.id !== 'endanchor') {
+    if(hotkeyMode || !selected) {
+      return (
+        <React.Fragment>
+          <div 
+            className={`subtitle ${selected ? 'selected' : ''}`}
+            onClick={handlePlayClick} 
+          >
+            <div className="subtitle-play">
+              <i className="fa fa-play-circle"></i>
+            </div>
+            <div className="subtitle-text">{realtimeSubtitle.text}</div>
           </div>
-          <div className="subtitle-text">{realtimeSubtitle.text}</div>
-        </div>
-        <div className={`gap`} style={{ height: gap }}></div>
-      </React.Fragment>
+          <div className={`gap`} style={{ height: gap }}></div>
+        </React.Fragment>
+      )
+    } else {
+      return (
+        <React.Fragment>
+          <div 
+            className={`subtitle ${selected ? 'selected' : ''}`}
+          >
+            <TextField 
+              InputProps={{ style: {  color: 'white'}}} 
+              className="selected-input"
+              label="Edit subtitle" 
+              value={realtimeSubtitle.text} 
+              onChange={handleTextChange}
+              autoFocus
+              fullWidth
+              multiline
+              onKeyDown={(event) => {
+                if (event.key == 'Escape' || !event.shiftKey && event.key == 'Enter')
+                  handleSwitchMode(event)
+              }}
+            />
+          </div>
+          <div className={`gap`} style={{ height: gap }}></div>
+        </React.Fragment>
     )
+  }
   } else {
-    return (
-      <React.Fragment>
-        <div 
-          className={`subtitle ${selected ? 'selected' : ''}`}
-        >
-          <TextField 
-            InputProps={{ style: {  color: 'white'}}} 
-            className="selected-input"
-            label="Edit subtitle" 
-            value={realtimeSubtitle.text} 
-            onChange={handleTextChange}
-            autoFocus
-            fullWidth
-            multiline
-            onKeyDown={(event) => {
-              if (event.key == 'Escape' || !event.shiftKey && event.key == 'Enter')
-                handleSwitchMode(event)
-            }}
-          />
-        </div>
-        <div className={`gap`} style={{ height: gap }}></div>
-      </React.Fragment>
-    )
+    return (<p></p>)
   }
 }
 
@@ -105,7 +111,9 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   const currentId = useSelector((state) => selectIdBySeconds(state, currentSeconds))
   const currentIndex = useSelector((state) => selectIndexbyId(state, currentId))
   const prev = useSelector((state) => selectSubtitleByIndex(state, currentIndex - 1))
+  console.log('currein', currentIndex)
   const current = useSelector((state) => selectSubtitleByIndex(state, currentIndex))
+  console.log('curfeferein', current)
   const next = useSelector((state) => selectSubtitleByIndex(state, currentIndex + 1))
   const [hotkeyMode, setHotkeyMode] = useState(true)
   const [AP, setAP] = useState(true)
@@ -156,6 +164,92 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   // Insert Delete && Alter Timestamps (maybe allow them to 'eat' into adjacents, up to the boundary of the next adjacent?)
   const paddingSeconds = 0
   const extensionAmount = 0.20
+  const defaultSubSize = 2
+  const minSubSize = 0.05
+  const maxSubSize = 500
+  // Insert before
+  useHotkeys('shift+a, shift+left', (e) => { 
+    e.preventDefault()
+    if(hotkeyMode) {
+      let oldCurrentPrevEnd = current.prev_end
+      let newEnd = Math.max(current.start - paddingSeconds, oldCurrentPrevEnd, 0);
+      let newStart = Math.max(newEnd - defaultSubSize, oldCurrentPrevEnd, 0)
+      console.log(newStart, newEnd)
+      if(newEnd - newStart > minSubSize) {
+        dispatch(addSubtitle({
+          start: newStart,
+          end: newEnd,
+          prev_end: oldCurrentPrevEnd,
+          next_start: current.start,
+          text: ''
+        }))
+        dispatch(updateSubtitle({
+          id: prev.id,
+          changes: {next_start: newStart}
+        }))
+        dispatch(updateSubtitle({
+          id: current.id,
+          changes: {prev_end: newEnd}
+        }))
+        setPlayhead(newStart)
+      }
+    }
+  }, [hotkeyMode, current, prev, next]);
+  // Insert After
+  useHotkeys('shift+d, shift+right', (e) => { 
+    e.preventDefault()
+    if(hotkeyMode) {
+      let oldCurrentNextStart = current.next_start || current.end + maxSubSize
+      let newStart = Math.min(current.end + paddingSeconds, oldCurrentNextStart);
+      let newEnd = Math.min(newStart + defaultSubSize, oldCurrentNextStart);
+      console.log(current.next_start, newStart, newEnd)
+      if(newEnd - newStart > minSubSize) {
+        dispatch(addSubtitle({
+          start: newStart,
+          end: newEnd,
+          prev_end: current.end,
+          next_start: oldCurrentNextStart,
+          text: ''
+        }))
+        dispatch(updateSubtitle({
+          id: next.id,
+          changes: {prev_end: newEnd}
+        }))
+        dispatch(updateSubtitle({
+          id: current.id,
+          changes: {next_start: newStart}
+        }))
+        setPlayhead(newStart)
+      }
+    }
+  }, [hotkeyMode, current, prev, next]);
+  // Insert At Playhead
+  useHotkeys('enter', (e) => { 
+    e.preventDefault()
+    if(hotkeyMode) {
+      let oldCurrentNextStart = current.next_start || current.end + maxSubSize
+      let newStart = currentSeconds;
+      let newEnd = Math.min(newStart + defaultSubSize, oldCurrentNextStart);
+      console.log(current.next_start, newStart, newEnd)
+      if(newEnd - newStart > minSubSize) {
+        dispatch(addSubtitle({
+          start: newStart,
+          end: newEnd,
+          prev_end: current.end,
+          next_start: oldCurrentNextStart,
+          text: ''
+        }))
+        dispatch(updateSubtitle({
+          id: next.id,
+          changes: {prev_end: newEnd}
+        }))
+        dispatch(updateSubtitle({
+          id: current.id,
+          changes: {next_start: newStart}
+        }))
+      }
+    }
+  }, [hotkeyMode, current, prev, next]);
   // Extend up
   useHotkeys('control+w, control+up', (e) => { 
     e.preventDefault()

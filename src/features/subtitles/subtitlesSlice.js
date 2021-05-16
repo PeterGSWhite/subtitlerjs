@@ -22,12 +22,29 @@ const subtitlesSlice = createSlice({
   name: 'subtitles',
   initialState: subtitlesAdapter.getInitialState(
     {
-      subtitles: []
+      ids: ['startanchor', 'endanchor'],
+      entities: {
+        startanchor: {
+          id: 'startanchor',
+          start: 0,
+          end: 0,
+          next_start: 9999999999,
+          text: ''
+        },
+        endanchor: {
+          id: 'endanchor',
+          start: 9999999999,
+          end: 9999999999,
+          prev_end: 0,
+          text: ''
+        }
+      }
     }  
   ),
   reducers: {
     initFromFile: {
       reducer(state, action) {
+        subtitlesAdapter.removeAll(state);
         subtitlesAdapter.addMany(state, action.payload.subtitles);
       },
       prepare(filebody) {
@@ -63,6 +80,11 @@ const subtitlesSlice = createSlice({
         }
       }
     },
+    addSubtitle(state, action) {
+      let startSeconds = parseFloat(action.payload.start.toFixed(6));
+      let endSeconds = parseFloat(action.payload.end.toFixed(6));
+      subtitlesAdapter.addOne(state, {...action.payload, id:nanoid(), start: startSeconds, end: endSeconds})
+    },
     deleteSubtitle(state, action) {
       subtitlesAdapter.removeOne(state, action.payload.currentId)
       subtitlesAdapter.updateMany(state, [action.payload.nextSub, action.payload.prevSub])
@@ -91,7 +113,7 @@ const subtitlesSlice = createSlice({
 
 
 export const selectIdBySeconds =  (state, seconds) => {
-  let currentSub = {};
+  let currentSub = {id: 'startanchor'};
   for(const el of Object.values(state.subtitles.entities)) {
     if(seconds >= el.start && seconds < (el.next_start || 99999999)) {
       currentSub = el
@@ -129,6 +151,7 @@ export const selectSubtitleByIndex =  (state, index) => {
 
 export const {
   initFromFile,
+  addSubtitle,
   deleteSubtitle,
   updateSubtitle
 } = subtitlesSlice.actions
