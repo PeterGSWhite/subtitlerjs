@@ -20,7 +20,8 @@ import {
   selectIndexbyId,
   selectSubtitleByIndex,
   deleteSubtitle,
-  updateSubtitle
+  updateSubtitle,
+  selectAllSubtitles
 } from './subtitlesSlice'
 
 const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, isNext_PrevEnd, setCurrentSeconds, hotkeyMode, setHotkeyMode }) => {
@@ -34,7 +35,8 @@ const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, 
   } else {
     next_start = subtitle.next_start
   }
-  var gap = (next_start-subtitle.end) + 'em'
+  console.log(subtitleId, subtitle, next_start, subtitle.end, 'oiiioiiiiyuoyoyo')
+  var gap = Math.min(Math.max(((next_start|subtitle.end)-subtitle.end), 0.1), 50) + 'px'
 
   // If subtitle is current, select it for focus and rerender when it changes
   let selected, realtimeSubtitle
@@ -117,6 +119,7 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
   const [hotkeyMode, setHotkeyMode] = useState(true)
   const [AP, setAP] = useState(true)
   const [userReady, setUserReady] = useState(false)
+  const [filename, setFilename] = useState('defaultfilename')
   const [alreadyPausedId, setAlreadyPausedId] = useState('')
   const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
   
@@ -236,30 +239,49 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
       }
       // Case 1: user inserts before all other subtitles  <-  currentindex = -1  <-  prev.id, current.id = firstpos, next.id = realid
       else if(current.id === 'firstpos' && default_start < next.start - minSubSize) {
+        let end =  Math.min(default_end, next.start)
         dispatch(addSubtitle({
           start: default_start,
-          end: Math.min(default_end, next.start),
+          end: end,
           next_start: next.start,
           text: ''
+        }))
+        dispatch(updateSubtitle({
+          id: next.id,
+          changes: {prev_end: end}
         }))
       }
       // Case 2: user inserts after all other subtitles <- prev.id, current.id = realid, next.id = lastpos
       else if(next.id === 'lastpos' && default_start >= current.end) {
+        let prev_end = current.end
         dispatch(addSubtitle({
           start: default_start,
           end: default_end,
-          prev_end: current.end,
+          prev_end: prev_end,
           text: ''
+        }))
+        dispatch(updateSubtitle({
+          id: current.id,
+          changes: {next_start: default_start}
         }))
       }
       // Case 3: user inserts in between subtitles <- current.id, next.id = realid
       else if(!current.id.includes('stpos') && !next.id.includes('pos') && default_start >= current.end && default_start < next.start - minSubSize) {
+        let end = Math.min(default_end, next.start)
         dispatch(addSubtitle({
           start: default_start,
-          end: Math.min(default_end, next.start),
+          end: end,
           prev_end: current.end,
           next_start: next.start,
           text: ''
+        }))
+        dispatch(updateSubtitle({
+          id: current.id,
+          changes: {next_start: default_start}
+        }))
+        dispatch(updateSubtitle({
+          id: next.id,
+          changes: {prev_end: end}
         }))
       }
       else {
@@ -472,6 +494,7 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
   }
   const onDrop = useCallback(acceptedFiles => {
     const file = acceptedFiles[0]
+    setFilename('srt_' + file.name.replace('.', '_'))
     const reader = new FileReader()
     reader.onload = () => { 
       dispatch(initFromFile(reader.result))
@@ -483,6 +506,41 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
 
   const handleUserReady = () => {
     setUserReady(true)
+  }
+
+  let subtitles = useSelector(selectAllSubtitles)
+  const secondsToTime = (seconds) => {
+    let ms = ("00" + Math.floor(1000*(seconds % 1))).slice(-3);
+    let s = ("0" +Math.floor(seconds % 60)).slice(-2);
+    let m = ("0" +Math.floor((seconds/60) % 60)).slice(-2);
+    let h = ("0" +Math.floor(seconds/3600)).slice(-2);
+    return h + ':' + m + ':' + s + ',' + ms
+  }
+  const generateSRT = () => {
+    let outputlines = []
+    let index = 1
+    subtitles.forEach((subtitle) => {
+      outputlines.push(index)
+      outputlines.push(secondsToTime(subtitle.start) + ' --> ' + secondsToTime(subtitle.end))
+      outputlines.push(subtitle.text)
+      outputlines.push('')
+      index++
+    })  
+    outputlines.pop()
+    return outputlines.join('\n')
+  }
+
+  const downloadSRTFile =  () => {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(generateSRT()));
+    element.setAttribute('download', filename);
+  
+    element.style.display = 'none';
+    document.body.appendChild(element);
+  
+    element.click();
+  
+    document.body.removeChild(element);
   }
 
   // Subtitles
@@ -528,6 +586,10 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
           <div className="option option-delete" onClick={handleDeleteSubtitle}>
             <span>Delete</span><br/>
             <i className="fa fa-trash"></i>
+          </div>
+          <div className="option option-download" onClick={downloadSRTFile}>
+            <span>Download SRT</span><br/>
+            <i className="fa fa-download"></i>
           </div>
         </div >
         <Fab color="primary" id="fab" aria-label="add" onClick={handleFocusSelected}>
