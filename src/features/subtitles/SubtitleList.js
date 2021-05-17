@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { unwrapResult, nanoid } from '@reduxjs/toolkit'
@@ -9,6 +9,7 @@ import VerticalAlignCenterIcon from '@material-ui/icons/VerticalAlignCenter';
 import { useHotkeys } from "react-hotkeys-hook";
 import TextField from '@material-ui/core/TextField';
 import {absoluteMinimum} from './utilityFunctions'
+import {useDropzone} from 'react-dropzone'
 
 import {
   initFromFile,
@@ -105,7 +106,7 @@ const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, 
   }
 }
 
-export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setCurrentSub, setPlaybackRate, setMuted, setPlaying}) => {
+export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrentSeconds, setCurrentSub, setPlaybackRate, setMuted, setPlaying}) => {
   const subtitleIds = useSelector(selectSubtitleIds)
   const dispatch = useDispatch()
   const currentId = useSelector((state) => selectIdBySeconds(state, currentSeconds))
@@ -115,6 +116,7 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   const next = useSelector((state) => selectSubtitleByIndex(state, currentIndex + 1))
   const [hotkeyMode, setHotkeyMode] = useState(true)
   const [AP, setAP] = useState(true)
+  const [userReady, setUserReady] = useState(false)
   const [alreadyPausedId, setAlreadyPausedId] = useState('')
   const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
   
@@ -221,26 +223,47 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
   useHotkeys('enter', (e) => { 
     e.preventDefault()
     if(hotkeyMode) {
-      let oldCurrentNextStart = current.next_start || current.end + paddingSeconds
-      let newStart = currentSeconds;
-      let newEnd = Math.min(newStart + defaultSubSize, oldCurrentNextStart);
-      console.log(current.next_start, newStart, newEnd)
-      if(newEnd - newStart > minSubSize || current.id === 'prevanchor' || current.id === 'currentanchor' || current.id === 'nextanchor' ) {
+      console.log(prev, current, next)
+      let default_start = currentSeconds
+      let default_end = currentSeconds + defaultSubSize
+      // Case 0: user inserts first subtitle
+      if(current.id === 'emptypos') {
         dispatch(addSubtitle({
-          start: newStart,
-          end: newEnd,
-          prev_end: current.end,
-          next_start: oldCurrentNextStart,
+          start: default_start,
+          end: default_end,
           text: ''
         }))
-        dispatch(updateSubtitle({
-          id: next.id,
-          changes: {prev_end: newEnd}
+      }
+      // Case 1: user inserts before all other subtitles  <-  currentindex = -1  <-  prev.id, current.id = firstpos, next.id = realid
+      else if(current.id === 'firstpos' && default_start < next.start - minSubSize) {
+        dispatch(addSubtitle({
+          start: default_start,
+          end: Math.min(default_end, next.start),
+          next_start: next.start,
+          text: ''
         }))
-        dispatch(updateSubtitle({
-          id: current.id,
-          changes: {next_start: newStart}
+      }
+      // Case 2: user inserts after all other subtitles <- prev.id, current.id = realid, next.id = lastpos
+      else if(next.id === 'lastpos' && default_start >= current.end) {
+        dispatch(addSubtitle({
+          start: default_start,
+          end: default_end,
+          prev_end: current.end,
+          text: ''
         }))
+      }
+      // Case 3: user inserts in between subtitles <- current.id, next.id = realid
+      else if(!current.id.includes('stpos') && !next.id.includes('pos') && default_start >= current.end && default_start < next.start - minSubSize) {
+        dispatch(addSubtitle({
+          start: default_start,
+          end: Math.min(default_end, next.start),
+          prev_end: current.end,
+          next_start: next.start,
+          text: ''
+        }))
+      }
+      else {
+        console.log('else statement:', prev, current, next, currentSeconds)
       }
     }
   }, [hotkeyMode, current, prev, next]);
@@ -447,15 +470,19 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
 
     }))
   }
-
-  const seedFromSRT = async (e) => {
-    e.preventDefault()
+  const onDrop = useCallback(acceptedFiles => {
+    const file = acceptedFiles[0]
     const reader = new FileReader()
-    reader.onload = async (e) => { 
-      const text = (e.target.result)
-      dispatch(initFromFile(text))
+    reader.onload = () => { 
+      dispatch(initFromFile(reader.result))
     };
-    reader.readAsText(e.target.files[0])
+    reader.readAsText(file)
+    handleUserReady()
+  }, [])
+  const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
+
+  const handleUserReady = () => {
+    setUserReady(true)
   }
 
   // Subtitles
@@ -478,44 +505,107 @@ export const SubtitleList = ({playerRef, currentSeconds, setCurrentSeconds, setC
     content = <div> No subtitles </div>
   }
 
-
-  return (
-    <section className="subtitles">
-      <div className={`options ${subtitleIds.length ? '': 'hidden'}`}>
-        <div className="option option-autopause">
-          <span>Auto Pause</span><br/>
-          <Switch onChange={handleToggleAP} checked={AP} />
+  if(userReady && videoStatus) {
+    return (
+      <section className="subtitles">
+        <div className="options">
+          <div className="option option-autopause">
+            <span>Auto Pause</span><br/>
+            <Switch onChange={handleToggleAP} checked={AP} />
+          </div>
+          <div className="option option-addabove" onClick={handleAddSubtitle}>
+            <span>Add above</span><br/>
+            <i className="fa fa-arrow-circle-up"></i>
+          </div>
+          <div className="option option-addbelow" onClick={handleFocusSelected}>
+            <span>Add below</span><br/>
+            <i className="fa fa-arrow-circle-down"></i>
+          </div>
+          <div className="option option-edit" onClick={handleEditSubtitle} >
+            <span>Edit</span><br/>
+            <i className="fa fa-edit"></i>
+          </div>
+          <div className="option option-delete" onClick={handleDeleteSubtitle}>
+            <span>Delete</span><br/>
+            <i className="fa fa-trash"></i>
+          </div>
+        </div >
+        <Fab color="primary" id="fab" aria-label="add" onClick={handleFocusSelected}>
+          <VerticalAlignCenterIcon />
+        </Fab>
+        <div className="subtitles-list">
+          {/* <p className="debugstring">prev.end: {prev.end} curr.pe: {current.prev_end}  prev.ns: {prev.next_start}  curr.st: {current.start}</p> */}
+          {content}
         </div>
-        <div className="option option-addabove" onClick={handleAddSubtitle}>
-          <span>Add above</span><br/>
-          <i className="fa fa-arrow-circle-up"></i>
+      </section>
+    )
+  }
+  else if(videoStatus) {
+    return (
+      <section className="welcome-container">
+      <div className="welcome-message-list">
+        <div className="welcome-message">
+          <h2>Choose how you want to start</h2>
         </div>
-        <div className="option option-addbelow" onClick={handleFocusSelected}>
-          <span>Add below</span><br/>
-          <i className="fa fa-arrow-circle-down"></i>
+        <div className="welcome-gap"></div>
+        <div className="welcome-message clickable">
+          <div {...getRootProps()} className="">
+            <input {...getInputProps()} />
+            {
+              isDragActive ?
+              <p>Drop your file here ...</p>:
+              <h4>Load subtitles from an existing .SRT file</h4>
+            }
+          </div>
         </div>
-        <div className="option option-edit" onClick={handleEditSubtitle} >
-          <span>Edit</span><br/>
-          <i className="fa fa-edit"></i>
+        <div className="welcome-gap"></div>
+        <div className="welcome-message clickable" onClick={handleUserReady}>
+          <h4>Create subtitles from scratch</h4>
         </div>
-        <div className="option option-delete" onClick={handleDeleteSubtitle}>
-          <span>Delete</span><br/>
-          <i className="fa fa-trash"></i>
+        <div className="welcome-gap"></div>
+        <div className="welcome-message">
+          <h4><del>(in development) Detect speech zones</del></h4>
         </div>
-      </div >
-      <div className={`options ${subtitleIds.length ? 'hidden': ''}`}>
-        <div className="option"> 
-          <span>Seed from SRT</span><br/>
-          <input type="file" onChange={seedFromSRT} />
-        </div>
-      </div>
-      <Fab color="primary" id="fab" aria-label="add" onClick={handleFocusSelected}>
-        <VerticalAlignCenterIcon />
-      </Fab>
-      <div className="subtitles-list">
-        {/* <p className="debugstring">prev.end: {prev.end} curr.pe: {current.prev_end}  prev.ns: {prev.next_start}  curr.st: {current.start}</p> */}
-        {content}
       </div>
     </section>
-  )
+    )
+  }
+  else {
+    return (
+      <section className="welcome-container">
+        <div className="welcome-message-list">
+          <div className="welcome-message">
+            <h2>Welcome to subtitlerr</h2>
+          </div>
+          <div className="welcome-message">
+            <h4>The fastest way to subtitle videos</h4>
+          </div>
+          <div className="welcome-gap"></div>
+          <div className="welcome-message">
+            <div>Instructions:</div>
+          </div>
+          <div className="welcome-gap"></div>
+          <div className="welcome-message">
+            <div>1: Pick the video you wish to subtitle</div>
+          </div>
+          <div className="welcome-gap"></div>
+          <div className="welcome-message">
+            <div>2: Choose whether you want to load an existing SRT file, or start from scratch</div>
+          </div>
+          <div className="welcome-gap"></div>
+          <div className="welcome-message">
+            <div>3: Begin adding and editing subtitles using hotkeys (link)</div>
+          </div>
+          <div className="welcome-gap"></div>
+          <div className="welcome-message">
+            <div>4: Download the .SRT file to use in your editing software of choice</div>
+          </div>
+          <div className="welcome-gap"></div>
+          <div className="welcome-message">
+            <div>5: YOUR PROGRESS WON'T BE SAVED IF YOU NAVIGATE AWAY FROM THE SITE - make sure you download the .SRT if you plan to continue where you left off</div>
+          </div>
+        </div>
+      </section>
+    )
+  }
 }

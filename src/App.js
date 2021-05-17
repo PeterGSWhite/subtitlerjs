@@ -15,7 +15,8 @@ import { Player } from './features/videoPlayer/Player'
 import './App.css'
 
 function App() {
-  const playerRef = useRef(null);
+  const playerRef = useRef('')
+  const [videoStatus, setVideoStatus] = useState(false);
   // const currentSeconds = useRef()
   const [currentSeconds, setCurrentSeconds] = useState(0)
   const [currentSub, setCurrentSub] = useState('')
@@ -39,6 +40,7 @@ function App() {
               <React.Fragment>
                 <Player 
                   playerRef={playerRef} 
+                  setVideoStatus={setVideoStatus}
                   onProgress={onProgress} 
                   currentSub={currentSub} 
                   playbackRate={playbackRate}
@@ -48,7 +50,8 @@ function App() {
                   tabIndex="-1"
                 />
                 <SubtitleList 
-                  playerRef={playerRef} 
+                  playerRef={playerRef}
+                  videoStatus={videoStatus} 
                   currentSeconds={currentSeconds} 
                   setCurrentSeconds={setCurrentSeconds} 
                   setCurrentSub={setCurrentSub} 

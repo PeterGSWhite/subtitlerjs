@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback  } from "react";
 import ReactPlayer from "react-player";
 import {useDropzone} from 'react-dropzone'
 
-export const Player = ({playerRef, onProgress, currentSub, playbackRate, muted, playing, setPlaying}) => {
+export const Player = ({playerRef, setVideoStatus, onProgress, currentSub, playbackRate, muted, playing, setPlaying}) => {
   const [videoFilePath, setVideoPath] = useState(null);
 
   // useEffect(() => {
@@ -13,6 +13,7 @@ export const Player = ({playerRef, onProgress, currentSub, playbackRate, muted, 
     const file = acceptedFiles[0]
     // const reader = new FileReader() // <-- access file contents (deets: https://github.com/react-dropzone/react-dropzone)
     setVideoPath(URL.createObjectURL(file))
+    setVideoStatus(true)
     console.log(acceptedFiles, file)
   }, [])
   const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
@@ -49,7 +50,7 @@ export const Player = ({playerRef, onProgress, currentSub, playbackRate, muted, 
         {
           isDragActive ?
           <p>Drop your video here ...</p>:
-          <p>Drag 'n' drop a video here, or click to select it<br/><br/>Please note: the video will not be saved on the site <br/><br/> Make sure to keep your local copy</p>
+          <p>Drag and drop a video here, or click to select it<br/><br/>Please note: the video will not be saved on the site <br/><br/> Make sure to keep your local copy</p>
         }
       </div>
     </div>
