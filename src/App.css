@@ -1,3 +1,16 @@
+.waveformContainer {
+	height: 60px;
+	width: 100%;
+	display: flex;
+	align-items: center;
+}
+
+.wavePoint {
+	display: flex;
+	flex: 1;
+	background-color: blue;
+}
+
 #fab {
   position: absolute;
   right: 20px;
