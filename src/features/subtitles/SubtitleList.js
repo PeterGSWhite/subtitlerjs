@@ -424,8 +424,12 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
     setPlaybackRate(prev => Math.max(0.25, prev-0.25))
   });
   useEffect(() => {
-    setCurrentSub(current.text);
-  }, [current])
+    if(currentSeconds <= current.end) {
+      setCurrentSub(current.text);
+    } else {
+      setCurrentSub('')
+    }
+  }, [current, currentSeconds])
 
   useEffect(() => {
     if(subtitleIds.length) {
