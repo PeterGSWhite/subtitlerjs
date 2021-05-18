@@ -8,6 +8,10 @@
   cursor: pointer;
 }
 
+.recordstart {
+  border: 5px white;
+}
+
 .videoUploadContainer {
   position: absolute;
   width: 75%;

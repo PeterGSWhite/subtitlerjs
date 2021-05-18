@@ -35,7 +35,6 @@ const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, 
   } else {
     next_start = subtitle.next_start
   }
-  console.log(subtitleId, subtitle, next_start, subtitle.end, 'oiiioiiiiyuoyoyo')
   var gap = Math.min(Math.max(((next_start|subtitle.end)-subtitle.end), 0.1), 50) + 'px'
 
   // If subtitle is current, select it for focus and rerender when it changes
@@ -108,7 +107,7 @@ const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, 
   }
 }
 
-export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrentSeconds, setCurrentSub, setPlaybackRate, setMuted, setPlaying}) => {
+export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRate, setCurrentSeconds, setCurrentSub, setPlaybackRate, setMuted, setPlaying}) => {
   const subtitleIds = useSelector(selectSubtitleIds)
   const dispatch = useDispatch()
   const currentId = useSelector((state) => selectIdBySeconds(state, currentSeconds))
@@ -117,14 +116,17 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
   const current = useSelector((state) => selectSubtitleByIndex(state, currentIndex))
   const next = useSelector((state) => selectSubtitleByIndex(state, currentIndex + 1))
   const [hotkeyMode, setHotkeyMode] = useState(true)
-  const [AP, setAP] = useState(true)
+  const [AP, setAP] = useState(false)
   const [userReady, setUserReady] = useState(false)
   const [filename, setFilename] = useState('defaultfilename')
   const [alreadyPausedId, setAlreadyPausedId] = useState('')
   const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
+  const [recordStart, setRecordStart] = useState(null) 
+  const [lastRecordEvent, setLastRecordEvent] = useState('recordend') 
   
   const setPlayhead = (seconds, playheadBuffer=0.05) => {
-    seconds += playheadBuffer
+    seconds = Math.max(seconds + playheadBuffer, 0)
+    console.log('setting playhead', seconds)
     playerRef.current.seekTo(seconds, "seconds");
     setCurrentSeconds(seconds)
     setPlaying(true)
@@ -139,28 +141,28 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
   // Subtitle navigation
   useHotkeys('left, a', (e) => {
     e.preventDefault()
-    if(hotkeyMode) {
+    if(hotkeyMode && userReady) {
       setPlayhead(prev.start)
     }
-  }, [prev, hotkeyMode]);
+  }, [prev, hotkeyMode, userReady]);
   useHotkeys('right, d', (e) => {
     e.preventDefault()
-    if(hotkeyMode) {
+    if(hotkeyMode && userReady) {
       setPlayhead(next.start)
     }
-  }, [next, hotkeyMode]);
+  }, [next, hotkeyMode, userReady]);
   useHotkeys('down, s', (e) => {
     e.preventDefault()
-    if(hotkeyMode) {
+    if(hotkeyMode && userReady) {
       setPlayhead(current.start)
     }
-  }, [current, alreadyPausedId, hotkeyMode]);
+  }, [current, alreadyPausedId, hotkeyMode, userReady]);
   useHotkeys('up, w, space, k', (e) => {
     e.preventDefault()
-    if(hotkeyMode) {
+    if(hotkeyMode && userReady) {
       setPlaying(true) 
     }
-  }, [hotkeyMode]);
+  }, [hotkeyMode, userReady]);
 
   // Insert Delete && Alter Timestamps (maybe allow them to 'eat' into adjacents, up to the boundary of the next adjacent?)
   const paddingSeconds = 0
@@ -168,67 +170,44 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
   const defaultSubSize = 2
   const minSubSize = 0.05
   const maxSubSize = 500
-  // Insert before
-  useHotkeys('shift+a, shift+left', (e) => { 
+  const reactionTime = 0.26
+  // Stepin
+  useHotkeys('f', (e) => {
     e.preventDefault()
-    if(hotkeyMode) {
-      let oldCurrentPrevEnd = current.prev_end
-      let newEnd = Math.max(current.start - paddingSeconds, oldCurrentPrevEnd, 0);
-      let newStart = Math.max(newEnd - defaultSubSize, oldCurrentPrevEnd, 0)
-      if(newEnd - newStart > minSubSize || current.id === 'prevanchor' || current.id === 'currentanchor' || current.id === 'nextanchor') {
-        dispatch(addSubtitle({
-          start: newStart,
-          end: newEnd,
-          prev_end: oldCurrentPrevEnd,
-          next_start: current.start,
-          text: ''
-        }))
-        dispatch(updateSubtitle({
-          id: prev.id,
-          changes: {next_start: newStart}
-        }))
-        dispatch(updateSubtitle({
-          id: current.id,
-          changes: {prev_end: newEnd}
-        }))
-        setPlayhead(newStart)
+    if(hotkeyMode && userReady) {
+      let stepInAt = currentSeconds - reactionTime*playbackRate;
+      console.log(stepInAt)
+      // Start new sub
+      if(lastRecordEvent === 'recordend') {
+        setLastRecordEvent('recordstart');
+        setRecordStart(stepInAt)
+        console.log('oiii')
+      } 
+      // End current sub and immediately start a new one
+      else {
+        let recordEnd = currentSeconds - reactionTime*playbackRate;
+        insertSubtitle(recordStart, recordEnd);
+        setRecordStart(recordEnd)
       }
     }
-  }, [hotkeyMode, current, prev, next]);
-  // Insert After
-  useHotkeys('shift+d, shift+right', (e) => { 
+  }, [currentSeconds, playbackRate, lastRecordEvent, recordStart, hotkeyMode, userReady])
+  // Stepout
+  useHotkeys('j', (e) => {
     e.preventDefault()
-    if(hotkeyMode) {
-      let oldCurrentNextStart = current.next_start || current.end + paddingSeconds
-      let newStart = Math.min(current.end + paddingSeconds, oldCurrentNextStart);
-      let newEnd = Math.min(newStart + defaultSubSize, oldCurrentNextStart);
-      if(newEnd - newStart > minSubSize || current.id === 'prevanchor' || current.id === 'currentanchor' || current.id === 'nextanchor') {
-        dispatch(addSubtitle({
-          start: newStart,
-          end: newEnd,
-          prev_end: current.end,
-          next_start: oldCurrentNextStart,
-          text: ''
-        }))
-        dispatch(updateSubtitle({
-          id: next.id,
-          changes: {prev_end: newEnd}
-        }))
-        dispatch(updateSubtitle({
-          id: current.id,
-          changes: {next_start: newStart}
-        }))
-        setPlayhead(newStart)
-      }
+    if(hotkeyMode && userReady) {
+      if(lastRecordEvent === 'recordstart') {
+        let recordEnd = currentSeconds - reactionTime*playbackRate;
+        console.log(recordEnd)
+        setLastRecordEvent('recordend');
+        insertSubtitle(recordStart, recordEnd);
+      } 
     }
-  }, [hotkeyMode, current, prev, next]);
-  // Insert At Playhead
-  useHotkeys('enter', (e) => { 
-    e.preventDefault()
-    if(hotkeyMode) {
-      console.log(prev, current, next)
-      let default_start = currentSeconds
-      let default_end = currentSeconds + defaultSubSize
+  }, [currentSeconds, playbackRate, lastRecordEvent, recordStart, hotkeyMode, userReady])
+  // Insert with start and end times
+  const insertSubtitle = (start, end) => {
+      console.log('inserting', start, end)
+      let default_start = Math.max(start, 0)
+      let default_end = end
       // Case 0: user inserts first subtitle
       if(current.id === 'emptypos') {
         dispatch(addSubtitle({
@@ -287,12 +266,21 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
       else {
         console.log('else statement:', prev, current, next, currentSeconds)
       }
+  }
+  // Insert At Playhead
+  useHotkeys('enter', (e) => { 
+    e.preventDefault()
+    if(hotkeyMode && userReady) {
+      console.log(prev, current, next)
+      let default_start = currentSeconds
+      let default_end = currentSeconds + defaultSubSize
+      insertSubtitle(default_start, default_end)
     }
-  }, [hotkeyMode, current, prev, next]);
+  }, [hotkeyMode, userReady, current, prev, next]);
   // Extend up
   useHotkeys('control+w, control+up', (e) => { 
     e.preventDefault()
-    if(hotkeyMode) {
+    if(hotkeyMode && userReady) {
       let newStart = Math.max(current.start - extensionAmount, prev.end);
       if(current.start - newStart) {
         dispatch(updateSubtitle({
@@ -306,11 +294,11 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
         setPlayhead(newStart)
       }
     }
-  }, [hotkeyMode, current, prev]);
+  }, [hotkeyMode, userReady , current, prev]);
   // Extend down
   useHotkeys('control+s, control+down', (e) => {
     e.preventDefault()
-    if(hotkeyMode) {
+    if(hotkeyMode && userReady) {
       let newEnd = Math.min(current.end + extensionAmount, next.start);
       if(newEnd - current.end) {
         dispatch(updateSubtitle({
@@ -324,11 +312,11 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
         setPlayhead(newEnd, -0.05)
       }
     }
-  }, [hotkeyMode, current, next]);
+  }, [hotkeyMode, userReady , current, next]);
   // Shrink down
   useHotkeys('alt+s, alt+down', (e) => { 
     e.preventDefault()
-    if(hotkeyMode) {
+    if(hotkeyMode && userReady) {
       let newStart = Math.max(current.start + extensionAmount, current.end - 0.25); // MIN SUB SIZE !?!?!?!
       if(current.start - newStart) {
         dispatch(updateSubtitle({
@@ -343,11 +331,11 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
       }
       
     }
-  }, [hotkeyMode, current, prev]);
+  }, [hotkeyMode, userReady , current, prev]);
   // Shrink up
   useHotkeys('alt+w, alt+up', (e) => {
     e.preventDefault()
-    if(hotkeyMode) {
+    if(hotkeyMode && userReady) {
       let newEnd = Math.min(current.end - extensionAmount, current.start + 0.25);
       if(newEnd - current.end) {
         dispatch(updateSubtitle({
@@ -361,11 +349,11 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
         setPlayhead(newEnd, -0.05)
       }
     }
-  }, [hotkeyMode, current, next]);
+  }, [hotkeyMode, userReady , current, next]);
   // Move up
   useHotkeys('shift+w, shift+up', (e) => { 
     e.preventDefault()
-    if(hotkeyMode) {
+    if(hotkeyMode && userReady) {
       let newStart = Math.max(current.start - extensionAmount, prev.end);
       let startDiff = current.start - newStart
       let newEnd = current.end - startDiff
@@ -386,11 +374,11 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
       }))
       setPlayhead(newStart)
     }
-  }, [hotkeyMode, current, prev, next]);
+  }, [hotkeyMode, userReady , current, prev, next]);
   // Move down
   useHotkeys('shift+s, shift+down', (e) => {
     e.preventDefault()
-    if(hotkeyMode) {
+    if(hotkeyMode && userReady) {
       let newEnd = Math.min(current.end + extensionAmount, next.start);
       let endDiff = newEnd - current.end
       let newStart = current.start + endDiff
@@ -411,14 +399,22 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
       }))
       setPlayhead(newStart)
     }
-  }, [hotkeyMode, current, prev, next]);
+  }, [hotkeyMode, userReady , current, prev, next]);
 
 
   // Video controls
   useHotkeys('m', (e) => {
     e.preventDefault()
-    setMuted(prev => !prev)
-  });
+    if(hotkeyMode && userReady) {
+      setMuted(prev => !prev)
+    }
+  }, [hotkeyMode, userReady]);
+  useHotkeys('k, space', (e) => {
+    e.preventDefault()
+    if(hotkeyMode && userReady) {
+      setPlaying(prev => !prev)
+    }
+  }, [hotkeyMode, userReady]);
   useHotkeys('shift+.', (e) => {
     e.preventDefault()
     setPlaybackRate(prev => Math.min(2, prev+0.25))
@@ -595,7 +591,7 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, setCurrent
         <Fab color="primary" id="fab" aria-label="add" onClick={handleFocusSelected}>
           <VerticalAlignCenterIcon />
         </Fab>
-        <div className="subtitles-list">
+        <div className={`subtitles-list ${lastRecordEvent}`}>
           {/* <p className="debugstring">prev.end: {prev.end} curr.pe: {current.prev_end}  prev.ns: {prev.next_start}  curr.st: {current.start}</p> */}
           {content}
         </div>

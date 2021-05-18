@@ -53,6 +53,7 @@ function App() {
                   playerRef={playerRef}
                   videoStatus={videoStatus} 
                   currentSeconds={currentSeconds} 
+                  playbackRate={playbackRate}
                   setCurrentSeconds={setCurrentSeconds} 
                   setCurrentSub={setCurrentSub} 
                   setPlaybackRate={setPlaybackRate}
