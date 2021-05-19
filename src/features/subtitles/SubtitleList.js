@@ -24,7 +24,7 @@ import {
   selectAllSubtitles
 } from './subtitlesSlice'
 
-const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, isNext_PrevEnd, setCurrentSeconds, hotkeyMode, setHotkeyMode }) => {
+const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, setCurrentSeconds, hotkeyMode, handleInsertHotkey }) => {
   const dispatch = useDispatch()
   const subtitle = useSelector((state) => selectSubtitleById(state, subtitleId))
 
@@ -56,10 +56,6 @@ const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, 
       id: realtimeSubtitle.id,
       changes: {text: e.target.value}
     }))
-  }
-  const handleSwitchMode = (e) => {
-    e.preventDefault()
-    setHotkeyMode(true)
   }
   if(realtimeSubtitle.id !== 'prevanchor' && realtimeSubtitle.id !== 'currentanchor' && realtimeSubtitle.id !== 'nextanchor') {
     if(hotkeyMode || !selected) {
@@ -93,8 +89,8 @@ const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, 
               fullWidth
               multiline
               onKeyDown={(event) => {
-                if (event.key == 'Escape' || !event.shiftKey && event.key == 'Enter')
-                  handleSwitchMode(event)
+                if (event.key == 'Escape' || event.shiftKey && event.key == 'i' || event.shiftKey && event.key == 'ArrowDown')
+                  handleInsertHotkey(event)
               }}
             />
           </div>
@@ -123,6 +119,14 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
   const [addDeleteRequestStatus, setAddDeleteRequestStatus] = useState('idle') // To stop double adds/deletes
   const [recordStart, setRecordStart] = useState(null) 
   const [lastRecordEvent, setLastRecordEvent] = useState('recordend') 
+  const [defaultPlaybackRate, setDefaultPlaybackRate] = useState(1.25)
+  const [defaultInsertPlaybackRate, setDefaultInsertPlaybackRate] = useState(2)
+  const [defaultInsertVerifyRate, setDefaultInsertVerifyRate] = useState(1)
+  const [defaultInsertSlomoRate, setDefaultInsertSlomoRate] = useState(0.5)
+  
+  useEffect(() => {
+    setPlaybackRate(defaultPlaybackRate)
+  }, [])
   
   const setPlayhead = (seconds, playheadBuffer=0.05) => {
     seconds = Math.max(seconds + playheadBuffer, 0)
@@ -133,11 +137,52 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
     setAlreadyPausedId('')
   }
 
-  // Hotkey logic
+  // Insert mode
   useHotkeys('i', (e) => {
     e.preventDefault()
-    setHotkeyMode(false)
-  });
+    if(hotkeyMode && userReady) {
+      setHotkeyMode(false)
+      setAP(true)
+      setPlaybackRate(defaultInsertPlaybackRate)
+      setPlayhead(current.start)
+      setPlaying(true)
+    }
+  }, [defaultInsertPlaybackRate, hotkeyMode, userReady, current]);
+  const handleInsertHotkey = (event) => {
+    event.preventDefault()
+    console.log(event.key)
+    if(event.key === 'Escape') {
+      console.log('im in here dog')
+      setPlaybackRate(defaultPlaybackRate)
+      setHotkeyMode(true)
+    }
+    else if(event.key  === 'ArrowDown') {
+      console.log('hmmmmm')
+      setPlaybackRate(defaultInsertVerifyRate)
+      setPlayhead(current.start)
+    }
+  }
+  useHotkeys('ctrl+down, command+down', (e) => {
+    e.preventDefault()
+    if(!hotkeyMode && userReady) {
+      setPlaybackRate(defaultInsertSlomoRate)
+      setPlayhead(current.start)
+    }
+  }, [defaultInsertSlomoRate, hotkeyMode, userReady, current]);
+  useHotkeys('shift+left', (e) => {
+    e.preventDefault()
+    if(!hotkeyMode && userReady) {
+      setPlaybackRate(defaultInsertPlaybackRate)
+      setPlayhead(prev.start)
+    }
+  }, [defaultInsertPlaybackRate, prev, hotkeyMode, userReady]);
+  useHotkeys('shift+right, enter', (e) => {
+    e.preventDefault()
+    if(!hotkeyMode && userReady) {
+      setPlaybackRate(defaultInsertPlaybackRate)
+      setPlayhead(next.start)
+    }
+  }, [defaultInsertPlaybackRate, next, hotkeyMode, userReady]);
   // Subtitle navigation
   useHotkeys('left, a', (e) => {
     e.preventDefault()
@@ -418,11 +463,17 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
   useHotkeys('shift+.', (e) => {
     e.preventDefault()
     setPlaybackRate(prev => Math.min(2, prev+0.25))
-  });
+    if(hotkeyMode) {
+      setDefaultPlaybackRate(prev => Math.min(2, prev+0.25))
+    }
+  }, [hotkeyMode]);
   useHotkeys('shift+,', (e) => {
     e.preventDefault()
     setPlaybackRate(prev => Math.max(0.25, prev-0.25))
-  });
+    if(hotkeyMode) {
+      setDefaultPlaybackRate(prev => Math.min(2, prev+0.25))
+    }
+  }, [hotkeyMode]);
   useEffect(() => {
     if(currentSeconds <= current.end) {
       setCurrentSub(current.text);
@@ -556,7 +607,7 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
         isNext_PrevEnd={subtitleId === next.id ? next.prev_end : false} 
         setCurrentSeconds={setCurrentSeconds} 
         hotkeyMode={hotkeyMode} 
-        setHotkeyMode={setHotkeyMode}
+        handleInsertHotkey={handleInsertHotkey}
       />
     ))
   } else {
