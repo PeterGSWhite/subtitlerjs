@@ -28,6 +28,14 @@ function App() {
     setCurrentSeconds(progress.playedSeconds)
   }
 
+  const onEnded = () => {
+    // Save the time of the earliest sub.
+    // Move auto pause here, and turn it on.
+    // Seek earliest sub start time
+    // set playing true
+    playerRef.current.seekTo(0)
+  }
+
   return (
     <Router>
       {/* <Navbar /> */}
@@ -42,6 +50,7 @@ function App() {
                   playerRef={playerRef} 
                   setVideoStatus={setVideoStatus}
                   onProgress={onProgress} 
+                  onEnded={onEnded}
                   currentSub={currentSub} 
                   playbackRate={playbackRate}
                   muted={muted} 

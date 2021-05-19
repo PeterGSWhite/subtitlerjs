@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback  } from "react";
 import ReactPlayer from "react-player";
 import {useDropzone} from 'react-dropzone'
 
-export const Player = ({playerRef, setVideoStatus, onProgress, currentSub, playbackRate, muted, playing, setPlaying}) => {
+export const Player = ({playerRef, setVideoStatus, onProgress, onEnded, currentSub, playbackRate, muted, playing, setPlaying}) => {
   const [videoFilePath, setVideoPath] = useState(null);
 
   // useEffect(() => {
@@ -32,6 +32,7 @@ export const Player = ({playerRef, setVideoStatus, onProgress, currentSub, playb
           url={videoFilePath}
           ref={playerRef}
           onProgress={onProgress}
+          onEnded={onEnded}
           progressInterval={50}
           width="100%"
           height="100%"

@@ -1,15 +1,14 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { Link } from 'react-router-dom'
-import { unwrapResult, nanoid } from '@reduxjs/toolkit'
 import 'font-awesome/css/font-awesome.min.css';
 import Switch from "react-switch";
 import Fab from '@material-ui/core/Fab';
 import VerticalAlignCenterIcon from '@material-ui/icons/VerticalAlignCenter';
 import { useHotkeys } from "react-hotkeys-hook";
 import TextField from '@material-ui/core/TextField';
-import {absoluteMinimum} from './utilityFunctions'
 import {useDropzone} from 'react-dropzone'
+
+import {Subtitle} from './Subtitle'
 
 import {
   initFromFile,
@@ -23,85 +22,6 @@ import {
   updateSubtitle,
   selectAllSubtitles
 } from './subtitlesSlice'
-
-const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, setCurrentSeconds, hotkeyMode, handleInsertHotkey }) => {
-  const dispatch = useDispatch()
-  const subtitle = useSelector((state) => selectSubtitleById(state, subtitleId))
-
-  // Need prev to adjust it's gap size when current extends up
-  let next_start
-  if(isPrev_NextStart) {
-    next_start = isPrev_NextStart
-  } else {
-    next_start = subtitle.next_start
-  }
-  var gap = Math.min(Math.max(((next_start|subtitle.end)-subtitle.end), 0.1), 50) + 'px'
-
-  // If subtitle is current, select it for focus and rerender when it changes
-  let selected, realtimeSubtitle
-  if(isCurrent_AllData) {
-    selected = true
-    realtimeSubtitle = isCurrent_AllData
-  } else {
-    selected = false
-    realtimeSubtitle = subtitle
-  }
-
-  const handlePlayClick = () => {
-    playerRef.current.seekTo(realtimeSubtitle.start, "seconds");
-    setCurrentSeconds(realtimeSubtitle.start)
-  }
-  const handleTextChange = (e) => {
-    dispatch(updateSubtitle({
-      id: realtimeSubtitle.id,
-      changes: {text: e.target.value}
-    }))
-  }
-  if(realtimeSubtitle.id !== 'prevanchor' && realtimeSubtitle.id !== 'currentanchor' && realtimeSubtitle.id !== 'nextanchor') {
-    if(hotkeyMode || !selected) {
-      return (
-        <React.Fragment>
-          <div 
-            className={`subtitle ${selected ? 'selected' : ''}`}
-            onClick={handlePlayClick} 
-          >
-            <div className="subtitle-play">
-              <i className="fa fa-play-circle"></i>
-            </div>
-            <div className="subtitle-text">{realtimeSubtitle.text}</div>
-          </div>
-          <div className={`gap`} style={{ height: gap }}></div>
-        </React.Fragment>
-      )
-    } else {
-      return (
-        <React.Fragment>
-          <div 
-            className={`subtitle ${selected ? 'selected' : ''}`}
-          >
-            <TextField 
-              InputProps={{ style: {  color: 'white'}}} 
-              className="selected-input"
-              label="Edit subtitle" 
-              value={realtimeSubtitle.text} 
-              onChange={handleTextChange}
-              autoFocus
-              fullWidth
-              multiline
-              onKeyDown={(event) => {
-                if (event.key == 'Escape' || event.shiftKey && event.key == 'i' || event.shiftKey && event.key == 'ArrowDown')
-                  handleInsertHotkey(event)
-              }}
-            />
-          </div>
-          <div className={`gap`} style={{ height: gap }}></div>
-        </React.Fragment>
-    )
-  }
-  } else {
-    return (<p></p>)
-  }
-}
 
 export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRate, setCurrentSeconds, setCurrentSub, setPlaybackRate, setMuted, setPlaying}) => {
   const subtitleIds = useSelector(selectSubtitleIds)
@@ -120,10 +40,11 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
   const [recordStart, setRecordStart] = useState(null) 
   const [lastRecordEvent, setLastRecordEvent] = useState('recordend') 
   const [defaultPlaybackRate, setDefaultPlaybackRate] = useState(1.25)
-  const [defaultInsertPlaybackRate, setDefaultInsertPlaybackRate] = useState(2)
+  const [defaultInsertPlaybackRate, setDefaultInsertPlaybackRate] = useState(1.75)
   const [defaultInsertVerifyRate, setDefaultInsertVerifyRate] = useState(1)
-  const [defaultInsertSlomoRate, setDefaultInsertSlomoRate] = useState(0.5)
-  
+  const [defaultInsertSlomoRate, setDefaultInsertSlomoRate] = useState(0.75)
+  const [verifyOn, setVerifyOn] = useState(false)
+
   useEffect(() => {
     setPlaybackRate(defaultPlaybackRate)
   }, [])
@@ -131,10 +52,12 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
   const setPlayhead = (seconds, playheadBuffer=0.05) => {
     seconds = Math.max(seconds + playheadBuffer, 0)
     console.log('setting playhead', seconds)
-    playerRef.current.seekTo(seconds, "seconds");
-    setCurrentSeconds(seconds)
-    setPlaying(true)
-    setAlreadyPausedId('')
+    if(!isNaN(seconds)) {
+      playerRef.current.seekTo(seconds, "seconds");
+      setCurrentSeconds(seconds)
+      setPlaying(true)
+      setAlreadyPausedId('')
+    }
   }
 
   // Insert mode
@@ -143,6 +66,7 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
     if(hotkeyMode && userReady) {
       setHotkeyMode(false)
       setAP(true)
+      setVerifyOn(false)
       setPlaybackRate(defaultInsertPlaybackRate)
       setPlayhead(current.start)
       setPlaying(true)
@@ -152,14 +76,41 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
     event.preventDefault()
     console.log(event.key)
     if(event.key === 'Escape') {
-      console.log('im in here dog')
+      setVerifyOn(false)
       setPlaybackRate(defaultPlaybackRate)
       setHotkeyMode(true)
     }
-    else if(event.key  === 'ArrowDown') {
-      console.log('hmmmmm')
-      setPlaybackRate(defaultInsertVerifyRate)
+    else if(event.shiftKey && event.key  === 'ArrowDown') {
+      if(verifyOn) {
+        console.log('not f irst')
+        setPlaybackRate(defaultInsertVerifyRate)
+        setPlayhead(current.start)
+      }
+      else {
+        setPlaybackRate(defaultInsertPlaybackRate)
+        setPlayhead(current.start)
+        setVerifyOn(true)
+      }
+    }
+    else if(event.ctrlKey && event.key  === 'ArrowDown') {
+      setPlaybackRate(defaultInsertSlomoRate)
       setPlayhead(current.start)
+    }
+    else if(event.ctrlKey && event.key  === 'ArrowLeft') {
+      setVerifyOn(false)
+      setPlaybackRate(defaultInsertPlaybackRate)
+      setPlayhead(prev.start)
+    }
+    else if(event.ctrlKey && event.key  === 'ArrowRight') {
+      setVerifyOn(false)
+      setPlaybackRate(defaultInsertPlaybackRate)
+      setPlayhead(next.start)
+    }
+    else if(!event.shiftKey && event.key  === 'Enter') {
+      setVerifyOn(false)
+      setPlaybackRate(defaultInsertPlaybackRate)
+      setPlayhead(next.start)
+      setPlaying(true)
     }
   }
   useHotkeys('ctrl+down, command+down', (e) => {
@@ -557,6 +508,7 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
 
   const handleUserReady = () => {
     setUserReady(true)
+    setPlaying(true)
   }
 
   let subtitles = useSelector(selectAllSubtitles)
