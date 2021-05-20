@@ -35,6 +35,7 @@ function App() {
 
   const onProgress = (progress) => {
     setCurrentSeconds(progress.playedSeconds)
+    
   }
 
   const onEnded = () => {

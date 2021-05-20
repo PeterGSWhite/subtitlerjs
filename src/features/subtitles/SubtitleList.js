@@ -45,10 +45,19 @@ export const SubtitleList = ({
   const [defaultInsertVerifyRate, setDefaultInsertVerifyRate] = useState(1)
   const [defaultInsertSlomoRate, setDefaultInsertSlomoRate] = useState(0.75)
   const [verifyOn, setVerifyOn] = useState(false)
+  const [defaultSubLength, setDefaultSubLength] = useState(3)
 
   useEffect(() => {
     setPlaybackRate(defaultPlaybackRate)
   }, [])
+
+  useEffect(() => {
+    if(lastRecordEvent === 'recordstart' && currentSeconds > recordStart + defaultSubLength) {
+      setLastRecordEvent('recordend');
+      console.log('so its this one....')
+      insertSubtitle(recordStart, currentSeconds);
+    }
+  }, [currentSeconds, recordStart, lastRecordEvent, defaultSubLength])
   
   const setPlayhead = (seconds, playheadBuffer=0.05) => {
     seconds = Math.max(seconds + playheadBuffer, 0)
@@ -60,6 +69,35 @@ export const SubtitleList = ({
       setAlreadyPausedId('')
     }
   }
+
+  // Insert Delete && Alter Timestamps (maybe allow them to 'eat' into adjacents, up to the boundary of the next adjacent?)
+  const paddingSeconds = 0
+  const extensionAmount = 0.20
+  const defaultSubSize = 3
+  const minSubSize = 0.3
+  const maxSubSize = 500
+  const reactionTime = 0.26
+  // Stepin
+  useHotkeys('f', (e) => {
+    e.preventDefault()
+    if(hotkeyMode && userReady) {
+      let stepInAt = currentSeconds - reactionTime*playbackRate;
+      console.log(stepInAt, lastRecordEvent)
+      // Start new sub
+      if(lastRecordEvent === 'recordend') {
+        console.log('im about to insert for some reason')    
+        setRecordStart(stepInAt)
+        setLastRecordEvent('recordstart');
+      } 
+      // End current sub and immediately start a new one
+      else if(currentSeconds > recordStart + 0.3) {
+        let recordEnd = currentSeconds - reactionTime*playbackRate;
+        setRecordStart(recordEnd)
+        insertSubtitle(recordStart, recordEnd);
+      }
+    }
+  }, [currentSeconds, playbackRate, lastRecordEvent, recordStart, hotkeyMode, userReady, reactionTime])
+
 
   // Insert mode
   useHotkeys('i', (e) => {
@@ -83,7 +121,6 @@ export const SubtitleList = ({
     }
     else if(event.shiftKey && event.key  === 'ArrowDown') {
       if(verifyOn) {
-        console.log('not f irst')
         setPlaybackRate(defaultInsertVerifyRate)
         setPlayhead(current.start)
       }
@@ -161,48 +198,9 @@ export const SubtitleList = ({
     }
   }, [hotkeyMode, userReady]);
 
-  // Insert Delete && Alter Timestamps (maybe allow them to 'eat' into adjacents, up to the boundary of the next adjacent?)
-  const paddingSeconds = 0
-  const extensionAmount = 0.20
-  const defaultSubSize = 2
-  const minSubSize = 0.05
-  const maxSubSize = 500
-  const reactionTime = 0.26
-  // Stepin
-  useHotkeys('f', (e) => {
-    e.preventDefault()
-    if(hotkeyMode && userReady) {
-      let stepInAt = currentSeconds - reactionTime*playbackRate;
-      console.log(stepInAt)
-      // Start new sub
-      if(lastRecordEvent === 'recordend') {
-        setLastRecordEvent('recordstart');
-        setRecordStart(stepInAt)
-        console.log('oiii')
-      } 
-      // End current sub and immediately start a new one
-      else {
-        let recordEnd = currentSeconds - reactionTime*playbackRate;
-        insertSubtitle(recordStart, recordEnd);
-        setRecordStart(recordEnd)
-      }
-    }
-  }, [currentSeconds, playbackRate, lastRecordEvent, recordStart, hotkeyMode, userReady])
-  // Stepout
-  useHotkeys('j', (e) => {
-    e.preventDefault()
-    if(hotkeyMode && userReady) {
-      if(lastRecordEvent === 'recordstart') {
-        let recordEnd = currentSeconds - reactionTime*playbackRate;
-        console.log(recordEnd)
-        setLastRecordEvent('recordend');
-        insertSubtitle(recordStart, recordEnd);
-      } 
-    }
-  }, [currentSeconds, playbackRate, lastRecordEvent, recordStart, hotkeyMode, userReady])
   // Insert with start and end times
   const insertSubtitle = (start, end) => {
-      console.log('inserting', start, end)
+      console.log('inserting', start, end,  prev, current, next,)
       let default_start = Math.max(start, 0)
       let default_end = end
       // Case 0: user inserts first subtitle
@@ -434,14 +432,7 @@ export const SubtitleList = ({
     }
   }, [current, currentSeconds])
 
-  useEffect(() => {
-    if(subtitleIds.length) {
-      if(hotkeyMode) {
-        // document.getElementsByClassName("selected")[0].focus();
-      }
-    }
-  }, [hotkeyMode, subtitleIds])
-
+ 
   // Auto pause logic
   useEffect(() => {
     let boundary = 0.15;
