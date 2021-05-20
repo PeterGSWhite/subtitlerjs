@@ -23,7 +23,10 @@ import {
   selectAllSubtitles
 } from './subtitlesSlice'
 
-export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRate, setCurrentSeconds, setCurrentSub, setPlaybackRate, setMuted, setPlaying}) => {
+export const SubtitleList = ({
+  playerRef, videoStatus, currentSeconds, playbackRate, setCurrentSeconds, setCurrentSub, setPlaybackRate, setMuted, setPlaying,
+  AP, setAP, hotkeyMode, setHotkeyMode
+}) => {
   const subtitleIds = useSelector(selectSubtitleIds)
   const dispatch = useDispatch()
   const currentId = useSelector((state) => selectIdBySeconds(state, currentSeconds))
@@ -31,8 +34,6 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
   const prev = useSelector((state) => selectSubtitleByIndex(state, currentIndex - 1))
   const current = useSelector((state) => selectSubtitleByIndex(state, currentIndex))
   const next = useSelector((state) => selectSubtitleByIndex(state, currentIndex + 1))
-  const [hotkeyMode, setHotkeyMode] = useState(true)
-  const [AP, setAP] = useState(false)
   const [userReady, setUserReady] = useState(false)
   const [filename, setFilename] = useState('defaultfilename')
   const [alreadyPausedId, setAlreadyPausedId] = useState('')
@@ -152,7 +153,7 @@ export const SubtitleList = ({playerRef, videoStatus, currentSeconds, playbackRa
     if(hotkeyMode && userReady) {
       setPlayhead(current.start)
     }
-  }, [current, alreadyPausedId, hotkeyMode, userReady]);
+  }, [current, hotkeyMode, userReady]);
   useHotkeys('up, w, space, k', (e) => {
     e.preventDefault()
     if(hotkeyMode && userReady) {

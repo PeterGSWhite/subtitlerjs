@@ -8,6 +8,10 @@ import {
 
 import { useSelector, useDispatch } from 'react-redux'
 
+import {
+  selectSubtitleByIndex
+} from './features/subtitles/subtitlesSlice'
+
 // import { Navbar } from './app/Navbar'
 import { SubtitleList } from './features/subtitles/SubtitleList'
 import { Player } from './features/videoPlayer/Player'
@@ -23,6 +27,11 @@ function App() {
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(false)
   const [playbackRate, setPlaybackRate] = useState(1)
+  const [hotkeyMode, setHotkeyMode] = useState(true)
+  const [AP, setAP] = useState(false)
+
+  // get start of subtitles
+  const firstSub = useSelector((state) => selectSubtitleByIndex(state, 0))
 
   const onProgress = (progress) => {
     setCurrentSeconds(progress.playedSeconds)
@@ -31,9 +40,13 @@ function App() {
   const onEnded = () => {
     // Save the time of the earliest sub.
     // Move auto pause here, and turn it on.
+    // Move hotkeymode here, and turn it off
     // Seek earliest sub start time
     // set playing true
-    playerRef.current.seekTo(0)
+    playerRef.current.seekTo(firstSub.start)
+    setAP(true)
+    setHotkeyMode(false)
+    setPlaying(true)
   }
 
   return (
@@ -68,6 +81,10 @@ function App() {
                   setPlaybackRate={setPlaybackRate}
                   setMuted={setMuted} 
                   setPlaying={setPlaying} 
+                  AP={AP}
+                  setAP={setAP}
+                  hotkeyMode={hotkeyMode}
+                  setHotkeyMode={setHotkeyMode}
                   tabIndex="-1"
                 />
               </React.Fragment>

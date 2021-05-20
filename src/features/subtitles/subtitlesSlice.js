@@ -131,7 +131,7 @@ export const selectSubtitleByIndex =  (state, index) => {
     return state.subtitles.entities[state.subtitles.ids[index]]
   }
   else {
-    return {'id': 'emptypos'}
+    return {id: 'emptypos', start: 0}
   }
   
 }
