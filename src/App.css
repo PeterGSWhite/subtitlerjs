@@ -152,7 +152,9 @@
 .subtitle-play {
   visibility: hidden;
   margin-right: 8px;
-
+}
+.subtitle-text {
+  white-space: pre-wrap;
 }
 .subtitle-play:hover {
   cursor: pointer;
@@ -209,4 +211,5 @@
   color: white !important;
   font-size: 24px;
   z-index: 1000;
+  white-space: pre-wrap;
 }

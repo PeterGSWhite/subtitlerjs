@@ -79,7 +79,8 @@ export const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_Next
                     (event.ctrlKey && event.key  === 'ArrowDown') || 
                     (event.ctrlKey && event.key == 'ArrowLeft') ||
                     (event.ctrlKey && event.key  === 'ArrowRight') ||
-                    (!event.shiftKey && event.key  === 'Enter')
+                    (!event.shiftKey && event.key  === 'Enter') ||
+                    (event.key  === 'Delete')
                 )
                 handleInsertHotkey(event)
                 }}

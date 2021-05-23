@@ -7,7 +7,7 @@ import VerticalAlignCenterIcon from '@material-ui/icons/VerticalAlignCenter';
 import { useHotkeys } from "react-hotkeys-hook";
 import TextField from '@material-ui/core/TextField';
 import {useDropzone} from 'react-dropzone'
-
+import {useInterval} from '../../utitliies'
 import {Subtitle} from './Subtitle'
 
 import {
@@ -71,18 +71,18 @@ export const SubtitleList = ({
 
   // Insert Delete && Alter Timestamps (maybe allow them to 'eat' into adjacents, up to the boundary of the next adjacent?)
   const paddingSeconds = 0
-  const extensionAmount = 0.20
+  const extensionAmount = 0.40
   const defaultSubSize = 3
   const minSubSize = 0.3
   const maxSubSize = 500
-  const reactionTime = 0.26
+  const reactionTime = 0.25
   const [pressedRecordEpoch, setPressedRecordEpoch] = useState(0)
   // Stepin
   useHotkeys('f', (e) => {
+    e.preventDefault()
     setPressedRecordEpoch(Date.now())
     if(hotkeyMode && userReady) {
       let stepInAt = currentSeconds - reactionTime*playbackRate;
-      console.log(stepInAt, lastRecordEvent)
       // Start new sub
       if(lastRecordEvent === 'recordend') { 
         setRecordStart(stepInAt)
@@ -99,9 +99,23 @@ export const SubtitleList = ({
   {enabled: Date.now() - pressedRecordEpoch > 300},
   [currentSeconds, playbackRate, lastRecordEvent, recordStart, hotkeyMode, userReady, reactionTime])
 
+  useHotkeys('g', (e) => {
+    e.preventDefault()
+    if(hotkeyMode && userReady) {
+      // Start new sub
+      if(lastRecordEvent === 'recordstart') { 
+        let recordEnd = currentSeconds - reactionTime*playbackRate;
+        setLastRecordEvent('recordend');
+        insertSubtitle(recordStart, recordEnd);
+      } 
+    }
+  }, 
+  {enabled: Date.now() - pressedRecordEpoch > 300},
+  [currentSeconds, playbackRate, lastRecordEvent, recordStart, hotkeyMode, userReady, reactionTime])
 
   // Insert mode
   useHotkeys('i', (e) => {
+    e.preventDefault()
     if(hotkeyMode && userReady) {
       setHotkeyMode(false)
       setAP(true)
@@ -112,11 +126,14 @@ export const SubtitleList = ({
     }
   }, [defaultInsertPlaybackRate, hotkeyMode, userReady, current]);
   const handleInsertHotkey = (event) => {
-    console.log(event.key)
+    event.preventDefault()
     if(event.key === 'Escape') {
       setVerifyOn(false)
       setPlaybackRate(defaultPlaybackRate)
       setHotkeyMode(true)
+    }
+    else if(event.key  === 'Del') {
+      handleDeleteSubtitle()
     }
     else if(event.shiftKey && event.key  === 'ArrowDown') {
       if(verifyOn) {
@@ -151,18 +168,21 @@ export const SubtitleList = ({
     }
   }
   useHotkeys('ctrl+down, command+down', (e) => {
+    e.preventDefault()
     if(!hotkeyMode && userReady) {
       setPlaybackRate(defaultInsertSlomoRate)
       setPlayhead(current.start)
     }
   }, [defaultInsertSlomoRate, hotkeyMode, userReady, current]);
   useHotkeys('shift+left', (e) => {
+    e.preventDefault()
     if(!hotkeyMode && userReady) {
       setPlaybackRate(defaultInsertPlaybackRate)
       setPlayhead(prev.start)
     }
   }, [defaultInsertPlaybackRate, prev, hotkeyMode, userReady]);
   useHotkeys('shift+right, enter', (e) => {
+    e.preventDefault()
     if(!hotkeyMode && userReady) {
       setPlaybackRate(defaultInsertPlaybackRate)
       setPlayhead(next.start)
@@ -170,22 +190,26 @@ export const SubtitleList = ({
   }, [defaultInsertPlaybackRate, next, hotkeyMode, userReady]);
   // Subtitle navigation
   useHotkeys('left, a', (e) => {
-    if(hotkeyMode && userReady) {
+    e.preventDefault()
+    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey) {
       setPlayhead(prev.start)
     }
   }, [prev, hotkeyMode, userReady]);
   useHotkeys('right, d', (e) => {
-    if(hotkeyMode && userReady) {
+    e.preventDefault()
+    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey) {
       setPlayhead(next.start)
     }
   }, [next, hotkeyMode, userReady]);
   useHotkeys('down, s', (e) => {
-    if(hotkeyMode && userReady) {
+    e.preventDefault()
+    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey) {
       setPlayhead(current.start)
     }
   }, [current, hotkeyMode, userReady]);
   useHotkeys('up, w, space, k', (e) => {
-    if(hotkeyMode && userReady) {
+    e.preventDefault()
+    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey) {
       setPlaying(true) 
     }
   }, [hotkeyMode, userReady]);
@@ -258,6 +282,7 @@ export const SubtitleList = ({
   }
   // Insert At Playhead
   useHotkeys('enter', (e) => { 
+    e.preventDefault()
     if(hotkeyMode && userReady) {
       console.log(prev, current, next)
       let default_start = currentSeconds
@@ -266,7 +291,8 @@ export const SubtitleList = ({
     }
   }, [hotkeyMode, userReady, current, prev, next]);
   // Extend up
-  useHotkeys('control+w, control+up', (e) => { 
+  useHotkeys('control+w, control+up, command+w, command+up', (e) => { 
+    e.preventDefault()
     if(hotkeyMode && userReady) {
       let newStart = Math.max(current.start - extensionAmount, prev.end);
       if(current.start - newStart) {
@@ -283,7 +309,8 @@ export const SubtitleList = ({
     }
   }, [hotkeyMode, userReady , current, prev]);
   // Extend down
-  useHotkeys('control+s, control+down', (e) => {
+  useHotkeys('control+s, control+down, command+s, command+down', (e) => {
+    e.preventDefault()
     if(hotkeyMode && userReady) {
       let newEnd = Math.min(current.end + extensionAmount, next.start);
       if(newEnd - current.end) {
@@ -295,12 +322,13 @@ export const SubtitleList = ({
           id: next.id,
           changes: {prev_end: newEnd}
         }))
-        setPlayhead(newEnd, -0.05)
+        setPlayhead(newEnd - 0.25)
       }
     }
   }, [hotkeyMode, userReady , current, next]);
   // Shrink down
   useHotkeys('alt+s, alt+down', (e) => { 
+    e.preventDefault()
     if(hotkeyMode && userReady) {
       let newStart = Math.max(current.start + extensionAmount, current.end - 0.25); // MIN SUB SIZE !?!?!?!
       if(current.start - newStart) {
@@ -319,6 +347,7 @@ export const SubtitleList = ({
   }, [hotkeyMode, userReady , current, prev]);
   // Shrink up
   useHotkeys('alt+w, alt+up', (e) => {
+    e.preventDefault()
     if(hotkeyMode && userReady) {
       let newEnd = Math.min(current.end - extensionAmount, current.start + 0.25);
       if(newEnd - current.end) {
@@ -330,12 +359,13 @@ export const SubtitleList = ({
           id: next.id,
           changes: {prev_end: newEnd}
         }))
-        setPlayhead(newEnd, -0.05)
+        setPlayhead(newEnd - 0.25)
       }
     }
   }, [hotkeyMode, userReady , current, next]);
   // Move up
   useHotkeys('shift+w, shift+up', (e) => { 
+    e.preventDefault()
     if(hotkeyMode && userReady) {
       let newStart = Math.max(current.start - extensionAmount, prev.end);
       let startDiff = current.start - newStart
@@ -360,6 +390,7 @@ export const SubtitleList = ({
   }, [hotkeyMode, userReady , current, prev, next]);
   // Move down
   useHotkeys('shift+s, shift+down', (e) => {
+    e.preventDefault()
     if(hotkeyMode && userReady) {
       let newEnd = Math.min(current.end + extensionAmount, next.start);
       let endDiff = newEnd - current.end
@@ -379,29 +410,33 @@ export const SubtitleList = ({
         id: next.id,
         changes: {prev_end: newEnd}
       }))
-      setPlayhead(newStart)
+      setPlayhead(newEnd - 0.25)
     }
   }, [hotkeyMode, userReady , current, prev, next]);
 
 
   // Video controls
   useHotkeys('m', (e) => {
-    if(hotkeyMode && userReady) {
+    e.preventDefault()
+    if(hotkeyMode) {
       setMuted(prev => !prev)
     }
-  }, [hotkeyMode, userReady]);
+  }, [hotkeyMode]);
   useHotkeys('k, space', (e) => {
-    if(hotkeyMode && userReady) {
+    e.preventDefault()
+    if(hotkeyMode) {
       setPlaying(prev => !prev)
     }
-  }, [hotkeyMode, userReady]);
+  }, [hotkeyMode]);
   useHotkeys('shift+.', (e) => {
+    e.preventDefault()
     setPlaybackRate(prev => Math.min(2, prev+0.25))
     if(hotkeyMode) {
       setDefaultPlaybackRate(prev => Math.min(2, prev+0.25))
     }
   }, [hotkeyMode]);
   useHotkeys('shift+,', (e) => {
+    e.preventDefault()
     setPlaybackRate(prev => Math.max(0.25, prev-0.25))
     if(hotkeyMode) {
       setDefaultPlaybackRate(prev => Math.min(2, prev+0.25))
@@ -414,6 +449,15 @@ export const SubtitleList = ({
       setCurrentSub('')
     }
   }, [current, currentSeconds])
+  useHotkeys('j', (e) => {
+    e.preventDefault()
+    console.log('oiii')
+    setPlayhead(currentSeconds - 10)
+  }, [hotkeyMode, currentSeconds]);
+  useHotkeys('l', (e) => {
+    e.preventDefault()
+    setPlayhead(currentSeconds + 10)
+  }, [hotkeyMode, currentSeconds]);
 
  
   // Auto pause logic
@@ -481,6 +525,12 @@ export const SubtitleList = ({
   }, [])
   const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
 
+  useInterval(() => {
+    if(userReady) {     
+      console.log(generateSRT())
+    }
+  }, 60 * 1000); // 60 * 1000 milsec
+  
   const handleUserReady = () => {
     setUserReady(true)
     setPlaying(true)
@@ -495,14 +545,17 @@ export const SubtitleList = ({
     return h + ':' + m + ':' + s + ',' + ms
   }
   const generateSRT = () => {
+    console.log(subtitles.length)
     let outputlines = []
     let index = 1
     subtitles.forEach((subtitle) => {
-      outputlines.push(index)
-      outputlines.push(secondsToTime(subtitle.start) + ' --> ' + secondsToTime(subtitle.end))
-      outputlines.push(subtitle.text)
-      outputlines.push('')
-      index++
+      if(subtitle.text) {
+        outputlines.push(index)
+        outputlines.push(secondsToTime(subtitle.start) + ' --> ' + secondsToTime(subtitle.end))
+        outputlines.push(subtitle.text)
+        outputlines.push('')
+        index++
+      }
     })  
     outputlines.pop()
     return outputlines.join('\n')
