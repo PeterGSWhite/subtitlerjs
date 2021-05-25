@@ -58,21 +58,26 @@ export const SubtitleList = ({
   }, [])
 
   useEffect(() => {
-    if(lastRecordEvent === 'recordstart' && currentSeconds > recordStart + defaultSubLength) {
-      setLastRecordEvent('recordend');
-      insertSubtitle(recordStart, currentSeconds);
-    }
-  }, [currentSeconds, recordStart, lastRecordEvent, defaultSubLength])
+    if(lastRecordEvent === 'recordstart') {
+      if(currentSeconds > recordStart + defaultSubLength || currentSeconds > playerRef.current.getDuration() - 0.5) {
+        setLastRecordEvent('recordend');
+        insertSubtitle(recordStart, currentSeconds);
+      }
+    } 
+  }, [currentSeconds, recordStart, lastRecordEvent, defaultSubLength, playerRef])
   
   const setPlayhead = (seconds, playheadBuffer=0.05) => {
-    seconds = Math.max(seconds + playheadBuffer, 0)
-    console.log('setting playhead', seconds)
-    if(!isNaN(seconds)) {
-      playerRef.current.seekTo(seconds, "seconds");
-      setCurrentSeconds(seconds)
-      setPlaying(true)
-      setAlreadyPausedId('')
+    if(lastRecordEvent !== 'recordstart') {
+      seconds = Math.max(seconds + playheadBuffer, 0)
+      console.log('setting playhead', seconds)
+      if(!isNaN(seconds)) {
+        playerRef.current.seekTo(seconds, "seconds");
+        setCurrentSeconds(seconds)
+        setPlaying(true)
+        setAlreadyPausedId('')
+      }
     }
+    
   }
 
   // Insert Delete && Alter Timestamps (maybe allow them to 'eat' into adjacents, up to the boundary of the next adjacent?)
@@ -87,7 +92,7 @@ export const SubtitleList = ({
   useHotkeys('f', (e) => {
     e.preventDefault()
     setPressedRecordEpoch(Date.now())
-    if(hotkeyMode && userReady) {
+    if(hotkeyMode && userReady && currentSeconds < playerRef.current.getDuration() - 0.5) {
       let stepInAt = currentSeconds - reactionTime*playbackRate;
       // Start new sub
       if(lastRecordEvent === 'recordend') { 
@@ -103,7 +108,7 @@ export const SubtitleList = ({
     }
   }, 
   {enabled: Date.now() - pressedRecordEpoch > 300},
-  [currentSeconds, playbackRate, lastRecordEvent, recordStart, hotkeyMode, userReady, reactionTime])
+  [currentSeconds, playbackRate, lastRecordEvent, recordStart, hotkeyMode, userReady, reactionTime, playerRef])
 
   useHotkeys('g', (e) => {
     e.preventDefault()
@@ -130,7 +135,7 @@ export const SubtitleList = ({
   }, [defaultInsertPlaybackRate, hotkeyMode, userReady, current]);
   useHotkeys('i', (e) => {
     e.preventDefault()
-    if(hotkeyMode && userReady) {
+    if(hotkeyMode && userReady && lastRecordEvent !== 'recordstart') {
       setHotkeyMode(false)
       setAP(true)
       setVerifyOn(false)
@@ -138,7 +143,7 @@ export const SubtitleList = ({
       setPlayhead(current.start)
       setPlaying(true)
     }
-  }, [defaultInsertPlaybackRate, hotkeyMode, userReady, current]);
+  }, [defaultInsertPlaybackRate, hotkeyMode, userReady, current, lastRecordEvent]);
   const handleInsertHotkey = (event) => {
     event.preventDefault()
     console.log(event)
@@ -210,31 +215,31 @@ export const SubtitleList = ({
   // Subtitle navigation
   useHotkeys('left, a', (e) => {
     e.preventDefault()
-    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey) {
+    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey && currentSeconds < playerRef.current.getDuration() - 0.5) {
       setPlayhead(prev.start)
     }
   }, [prev, hotkeyMode, userReady]);
   useHotkeys('right, d', (e) => {
     e.preventDefault()
-    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey) {
+    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey && currentSeconds < playerRef.current.getDuration() - 0.5) {
       setPlayhead(next.start)
     }
   }, [next, hotkeyMode, userReady]);
   useHotkeys('down, s', (e) => {
     e.preventDefault()
-    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey) {
+    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey && currentSeconds < playerRef.current.getDuration() - 0.5) {
       setPlayhead(current.start)
     }
   }, [current, hotkeyMode, userReady]);
   useHotkeys('up, w, space, k', (e) => {
     e.preventDefault()
-    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey) {
+    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey && currentSeconds < playerRef.current.getDuration() - 0.5) {
       setPlaying(true) 
     }
   }, [hotkeyMode, userReady]);
   useHotkeys('delete', (e) => {
     e.preventDefault()
-    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey) {
+    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey && currentSeconds < playerRef.current.getDuration() - 0.5) {
       handleDeleteSubtitle() 
     }
   }, [hotkeyMode, userReady]);
@@ -304,16 +309,7 @@ export const SubtitleList = ({
         console.log('else statement:', prev, current, next, currentSeconds)
       }
   }
-  // Insert At Playhead
-  useHotkeys('enter', (e) => { 
-    e.preventDefault()
-    if(hotkeyMode && userReady) {
-      console.log(prev, current, next)
-      let default_start = currentSeconds
-      let default_end = currentSeconds + defaultSubSize
-      insertSubtitle(default_start, default_end)
-    }
-  }, [hotkeyMode, userReady, current, prev, next]);
+
   // Extend up
   useHotkeys('control+w, control+up, command+w, command+up', (e) => { 
     e.preventDefault()
@@ -437,7 +433,6 @@ export const SubtitleList = ({
       setPlayhead(newEnd - 0.25)
     }
   }, [hotkeyMode, userReady , current, prev, next]);
-
 
   // Video controls
   useHotkeys('m', (e) => {
@@ -695,10 +690,10 @@ export const SubtitleList = ({
         </div>
         <div className="welcome-gap"></div>
         {resumeButton}
-        <div className="welcome-gap"></div>
+        {/* <div className="welcome-gap"></div>
         <div className="welcome-message">
           <h4><del>(in development) Detect speech zones</del></h4>
-        </div>
+        </div> */}
       </div>
     </section>
     )

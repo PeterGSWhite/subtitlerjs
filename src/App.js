@@ -39,6 +39,7 @@ function App() {
   }
 
   const onEnded = () => {
+    // terminate final sub if being recorded
     // Save the time of the earliest sub.
     // Move auto pause here, and turn it on.
     // Move hotkeymode here, and turn it off
