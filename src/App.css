@@ -25,6 +25,12 @@
   flex-direction: column;
 }
 
+.multikeycontainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
 .hint-text {
   z-index: 51;
 }

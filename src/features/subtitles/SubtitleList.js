@@ -127,12 +127,13 @@ export const SubtitleList = ({
   }, [defaultInsertPlaybackRate, hotkeyMode, userReady, current]);
   const handleInsertHotkey = (event) => {
     event.preventDefault()
+    console.log(event)
     if(event.key === 'Escape') {
       setVerifyOn(false)
       setPlaybackRate(defaultPlaybackRate)
       setHotkeyMode(true)
     }
-    else if(event.key  === 'Del') {
+    else if(event.key  === 'Delete') {
       handleDeleteSubtitle()
     }
     else if(event.shiftKey && event.key  === 'ArrowDown') {
@@ -159,6 +160,10 @@ export const SubtitleList = ({
       setVerifyOn(false)
       setPlaybackRate(defaultInsertPlaybackRate)
       setPlayhead(next.start)
+    }
+    else if(event.ctrlKey && event.key  === 'ArrowUp') {
+      setPlaybackRate(defaultInsertPlaybackRate)
+      setPlaying(true)
     }
     else if(!event.shiftKey && event.key  === 'Enter') {
       setVerifyOn(false)
@@ -213,7 +218,12 @@ export const SubtitleList = ({
       setPlaying(true) 
     }
   }, [hotkeyMode, userReady]);
-
+  useHotkeys('del', (e) => {
+    e.preventDefault()
+    if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey) {
+      handleDeleteSubtitle() 
+    }
+  }, [hotkeyMode, userReady]);
   // Insert with start and end times
   const insertSubtitle = (start, end) => {
       if(start < (current.end|-minSubSize) + minSubSize) {

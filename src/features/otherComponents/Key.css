@@ -26,3 +26,13 @@
     top: 0.2em;
     box-shadow: 0 0 0 0.05em black;
 }
+
+.keyboard__container > div > span::selection {
+    color: none;
+    background: none;
+}
+/* For Mozilla Firefox */
+.keyboard__container > div > span::-moz-selection {
+    color: none;
+    background: none;
+}
