@@ -114,6 +114,14 @@ export const SubtitleList = ({
   [currentSeconds, playbackRate, lastRecordEvent, recordStart, hotkeyMode, userReady, reactionTime])
 
   // Insert mode
+  useHotkeys('escape', (e) => {
+    e.preventDefault()
+    if(!hotkeyMode && userReady) {
+      setHotkeyMode(true)
+      setAP(false)
+      setPlaying(true)
+    }
+  }, [defaultInsertPlaybackRate, hotkeyMode, userReady, current]);
   useHotkeys('i', (e) => {
     e.preventDefault()
     if(hotkeyMode && userReady) {
@@ -218,7 +226,7 @@ export const SubtitleList = ({
       setPlaying(true) 
     }
   }, [hotkeyMode, userReady]);
-  useHotkeys('del', (e) => {
+  useHotkeys('delete', (e) => {
     e.preventDefault()
     if(hotkeyMode && userReady && !e.shiftKey && !e.altKey && !e.ctrlkey) {
       handleDeleteSubtitle() 
@@ -611,14 +619,6 @@ export const SubtitleList = ({
           <div className="option option-autopause">
             <span>Auto Pause</span><br/>
             <Switch onChange={handleToggleAP} checked={AP} />
-          </div>
-          <div className="option option-addabove" onClick={handleAddSubtitle}>
-            <span>Add above</span><br/>
-            <i className="fa fa-arrow-circle-up"></i>
-          </div>
-          <div className="option option-addbelow" onClick={handleFocusSelected}>
-            <span>Add below</span><br/>
-            <i className="fa fa-arrow-circle-down"></i>
           </div>
           <div className="option option-edit" onClick={handleEditSubtitle} >
             <span>Edit</span><br/>
