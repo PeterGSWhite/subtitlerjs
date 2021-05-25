@@ -4,6 +4,31 @@
   top: calc(5em + 12px);
 }
 
+.hotkeyhints {
+  color: white;
+  position: fixed;
+  width: 75%;
+  height: 7em;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  z-index: 20;
+}
+
+.hint {
+  align-items: center;
+  width: 10em;
+  color: white;
+  z-index: 50;
+  height: 7em;
+  display: flex;
+  flex-direction: column;
+}
+
+.hint-text {
+  z-index: 51;
+}
+
 .clickable {
   cursor: pointer;
 }

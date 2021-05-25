@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback  } from "react";
 import ReactPlayer from "react-player";
 import {useDropzone} from 'react-dropzone'
+import {Key} from '../otherComponents/Key'
 
-export const Player = ({playerRef, setVideoStatus, onProgress, onEnded, currentSub, playbackRate, muted, playing, setPlaying}) => {
+export const Player = ({playerRef, setVideoStatus, onProgress, onEnded, currentSub, playbackRate, muted, playing, setPlaying, hotkeyMode}) => {
   const [videoFilePath, setVideoPath] = useState(null);
 
   // useEffect(() => {
@@ -22,9 +23,55 @@ export const Player = ({playerRef, setVideoStatus, onProgress, onEnded, currentS
 
   const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
 
+  let hotkeyHint;
+  if(hotkeyMode) {
+    hotkeyHint = 
+    <div class="hotkeyhints">
+        <div class="hint">
+          <div class="hint-text">Insert mode</div>
+          <Key icon="I"/>
+        </div>
+        <div class="hint">
+          <div class="hint-text">Add sub here</div>
+          <Key icon="F"/>
+        </div>
+        <div class="hint">
+          <div class="hint-text">End sub early</div>
+          <Key icon="G"/>
+        </div>
+        <div class="hint">
+          <div class="hint-text">Replay current sub</div>
+          <Key icon="S"/>
+        </div>
+        <div class="hint">
+          <div class="hint-text">Prev Sub</div>
+          <Key icon="A"/>
+        </div>
+        <div class="hint">
+          <div class="hint-text">Next Sub</div>
+          <Key icon="D"/>
+        </div>
+        <div class="hint">
+          <div class="hint-text">Delete current sub</div>
+          <Key icon="Del"/>
+        </div>
+      </div>
+  } else {
+    hotkeyHint = 
+    <div class="hotkeyhints">
+      <div class="hint">
+        Switch to Hotkey mode
+        <i className="fa fa-download"></i>
+      </div>
+    </div>
+    
+  }
+ 
   if(videoFilePath) {
     return (
       <div className="playerContainer">
+        
+          {hotkeyHint}
         <div className="display-current-sub">
           <em>{currentSub}</em>
         </div>

@@ -70,6 +70,7 @@ function App() {
                   muted={muted} 
                   playing={playing} 
                   setPlaying={setPlaying} 
+                  hotkeyMode={hotkeyMode}
                   tabIndex="-1"
                 />
                 <SubtitleList 
