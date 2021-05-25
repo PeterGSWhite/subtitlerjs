@@ -46,9 +46,15 @@ export const SubtitleList = ({
   const [defaultInsertSlomoRate, setDefaultInsertSlomoRate] = useState(0.75)
   const [verifyOn, setVerifyOn] = useState(false)
   const [defaultSubLength, setDefaultSubLength] = useState(4)
+  const [savedCookieExists, setSavedCookieExists] = useState(false)
 
   useEffect(() => {
     setPlaybackRate(defaultPlaybackRate)
+    if (document.cookie.split(';').some(function(item) {
+      return item.trim().indexOf('saved_progress=') == 0
+    })) {
+      setSavedCookieExists(true)
+    }
   }, [])
 
   useEffect(() => {
@@ -545,13 +551,25 @@ export const SubtitleList = ({
 
   useInterval(() => {
     if(userReady) {     
-      console.log(generateSRT())
+      let savedProgress = generateSRT('//')
+      if(savedProgress) {
+        document.cookie = `saved_progress=${savedProgress};max-age=604800`
+      }
     }
   }, 60 * 1000); // 60 * 1000 milsec
   
   const handleUserReady = () => {
     setUserReady(true)
     setPlaying(true)
+  }
+
+  const handleCookieLoad = () => {
+    let srt_file = document.cookie
+                  .split('; ')
+                  .find(row => row.startsWith('saved_progress'))
+                  .split('=')[1].replace('//', '\n')
+    dispatch(initFromFile(srt_file))
+    handleUserReady()
   }
 
   let subtitles = useSelector(selectAllSubtitles)
@@ -562,7 +580,7 @@ export const SubtitleList = ({
     let h = ("0" +Math.floor(seconds/3600)).slice(-2);
     return h + ':' + m + ':' + s + ',' + ms
   }
-  const generateSRT = () => {
+  const generateSRT = (joinwith='\n') => {
     console.log(subtitles.length)
     let outputlines = []
     let index = 1
@@ -576,7 +594,7 @@ export const SubtitleList = ({
       }
     })  
     outputlines.pop()
-    return outputlines.join('\n')
+    return outputlines.join(joinwith)
   }
 
   const downloadSRTFile =  () => {
@@ -610,6 +628,16 @@ export const SubtitleList = ({
     ))
   } else {
     content = <div> No subtitles </div>
+  }
+
+  let resumeButton
+  if (savedCookieExists) {
+    resumeButton = 
+      <div className="welcome-message clickable" onClick={handleCookieLoad}>
+        <h4>Resume from auto-saved progress</h4>
+      </div>
+  } else {
+    resumeButton = ''
   }
 
   if(userReady && videoStatus) {
@@ -665,6 +693,8 @@ export const SubtitleList = ({
         <div className="welcome-message clickable" onClick={handleUserReady}>
           <h4>Create subtitles from scratch</h4>
         </div>
+        <div className="welcome-gap"></div>
+        {resumeButton}
         <div className="welcome-gap"></div>
         <div className="welcome-message">
           <h4><del>(in development) Detect speech zones</del></h4>
