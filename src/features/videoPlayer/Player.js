@@ -24,77 +24,94 @@ export const Player = ({playerRef, setVideoStatus, onProgress, onEnded, currentS
   const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
 
   let hotkeyHint;
-  if(hotkeyMode) {
+  if(hotkeyMode === 1) {
     hotkeyHint = 
     <div className="hotkeyhints">
-        <div className="hint">
-          <div className="hint-text">Insert mode</div>
+        <div className="hint">   
           <Key icon="I"/>
+          <div className="hint-text">Insert mode</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Add sub here</div>
+          <Key icon="E"/>
+          <div className="hint-text">Edit mode</div>
+        </div>
+        <div className="hint">
           <Key icon="F"/>
+          <div className="hint-text">Add sub here</div>
         </div>
         <div className="hint">
-          <div className="hint-text">End sub early</div>
           <Key icon="G"/>
+          <div className="hint-text">End sub early</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Unpause</div>
           <Key icon="W"/>
+          <div className="hint-text">Unpause</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Replay current sub</div>
           <Key icon="S"/>
+          <div className="hint-text">Replay current sub</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Prev Sub</div>
           <Key icon="A"/>
+          <div className="hint-text">Prev Sub</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Next Sub</div>
           <Key icon="D"/>
+          <div className="hint-text">Next Sub</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Delete current sub</div>
           <Key icon="Del"/>
+          <div className="hint-text">Delete current sub</div>
         </div>
       </div>
-  } else {
-    hotkeyHint = 
+  } else if(hotkeyMode === 2) {
     hotkeyHint = 
     <div className="hotkeyhints">
         <div className="hint">
-          <div className="hint-text">Nav mode</div>
           <Key icon="Esc"/>
+          <div className="hint-text">Nav mode</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Next sub</div>
+          <Key icon="eggg"/>
+          <div className="hint-text">some kind of edit thing</div>
+        </div>
+      </div>
+    
+    
+  } else {
+    hotkeyHint = 
+    <div className="hotkeyhints">
+        <div className="hint">
+          <Key icon="Esc"/>
+          <div className="hint-text">Nav mode</div>
+        </div>
+        <div className="hint">
           <Key icon="Enter"/>
+          <div className="hint-text">Next sub</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Newline</div>
           <span className="multikeycontainer"><Key icon="Shift"/> <Key icon="Enter"/></span>
+          <div className="hint-text">Newline</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Prev Sub</div>
           <span className="multikeycontainer"><Key icon="Ctrl"/> <Key icon="←"/></span>
+          <div className="hint-text">Prev Sub</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Replay</div>
           <span className="multikeycontainer"><Key icon="Shift"/> <Key icon="↓"/></span>
+          <div className="hint-text">Replay</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Slomo</div>
           <span className="multikeycontainer"><Key icon="Ctrl"/> <Key icon="↓"/></span>
+          <div className="hint-text">Slomo</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Unpause</div>
           <span className="multikeycontainer"><Key icon="Ctrl"/> <Key icon="↑"/></span>
+          <div className="hint-text">Unpause</div>
         </div>
         <div className="hint">
-          <div className="hint-text">Delete current sub</div>
           <Key icon="Del"/>
+          <div className="hint-text">Delete current sub</div>
         </div>
       </div>
     

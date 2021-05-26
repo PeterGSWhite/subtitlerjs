@@ -27,7 +27,7 @@ function App() {
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(false)
   const [playbackRate, setPlaybackRate] = useState(1)
-  const [hotkeyMode, setHotkeyMode] = useState(true)
+  const [hotkeyMode, setHotkeyMode] = useState(1)
   const [AP, setAP] = useState(false)
 
   // get start of subtitles
@@ -47,7 +47,7 @@ function App() {
     // set playing true
     playerRef.current.seekTo(firstSub.start)
     setAP(true)
-    setHotkeyMode(false)
+    setHotkeyMode(0)
     setPlaying(true)
   }
 
