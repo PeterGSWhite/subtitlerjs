@@ -206,7 +206,7 @@ export const SubtitleList = ({
   }
   useHotkeys('ctrl+down, command+down', (e) => {
     e.preventDefault()
-    if(!hotkeyMode && userReady) {
+    if(hotkeyMode !== 1 && userReady) {
       setPlaybackRate(defaultInsertSlomoRate)
       setPlayhead(current.start)
     }
@@ -330,12 +330,13 @@ export const SubtitleList = ({
     e.preventDefault()
     if(hotkeyMode == 2  && userReady) {
       let extensionAmount
-      if(e.key === 'j') {
+      if(e.key === 'J') {
         extensionAmount = 1
-      } else if(e.key === ',') {
+      } else if(e.key === '<') {
         extensionAmount = 0.1
       }
-      let newStart = Math.max(current.start - extensionAmount, prev.end);
+      let newStart = Math.max(current.start - extensionAmount, current.prev_end, 0);
+
       if(current.start - newStart) {
         dispatch(updateSubtitle({
           id: current.id,
@@ -345,6 +346,7 @@ export const SubtitleList = ({
           id: prev.id,
           changes: {next_start: newStart}
         }))
+        setPlayhead(newStart)
       }
     }
   }, [hotkeyMode, userReady , current, prev]);
@@ -372,7 +374,7 @@ export const SubtitleList = ({
     }
   }, [hotkeyMode, userReady , current, next]);
   // Shrink down
-  useHotkeys('L, >', (e) => { 
+  useHotkeys('shift+l, shift+.', (e) => { 
     console.log(e)
     e.preventDefault()
     if(hotkeyMode == 2  && userReady) {
@@ -392,6 +394,7 @@ export const SubtitleList = ({
           id: prev.id,
           changes: {next_start: newStart}
         }))
+        setPlayhead(newStart)
       }
       
     }
