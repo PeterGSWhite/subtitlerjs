@@ -23,12 +23,18 @@
   height: 7em;
   display: flex;
   flex-direction: column;
+  margin-right: 10px;
 }
 
 .multikeycontainer {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
+  margin-right: 10px;
+}
+
+.multikeycontainer > div {
+  margin-right: 2px;
 }
 
 .hint-text {

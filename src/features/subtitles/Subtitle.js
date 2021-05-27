@@ -61,10 +61,10 @@ export const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_Next
         return (
           <React.Fragment>
             <span style={{ visibility: realtimeSubtitle.prev_end && realtimeSubtitle.prev_end <= realtimeSubtitle.start ? 'visible' : 'hidden' }}>
-              <div className="timestamp">Prev End: {realtimeSubtitle.prev_end} s</div>
+              <div className="timestamp">Prev End: {realtimeSubtitle.prev_end ? realtimeSubtitle.prev_end.toFixed(1) : ''} s</div>
               <div className="gap" style={{ height: Math.min(Math.max((realtimeSubtitle.start-realtimeSubtitle.prev_end), 0.1), 50) + 'px' }}></div>
             </span>
-            <div className="timestamp">Starts: {realtimeSubtitle.start} s</div>
+            <div className="timestamp">Starts: {realtimeSubtitle.start.toFixed(1)} s</div>
             <div 
               className={`subtitle ${selected ? 'selected' : ''}`}
               onClick={handlePlayClick} 
@@ -74,9 +74,9 @@ export const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_Next
               </div>
               <div className="subtitle-text">{realtimeSubtitle.text}</div>
             </div>
-            <div className="timestamp">Ends: {realtimeSubtitle.end} s</div>
+            <div className="timestamp">Ends: {realtimeSubtitle.end.toFixed(1)} s</div>
             <div className="gap" style={{ height: gap }}></div>
-            <div className="timestamp" style={{ visibility: realtimeSubtitle.next_start && realtimeSubtitle.next_start >= realtimeSubtitle.end ? 'visible' : 'hidden' }}>Next start: {realtimeSubtitle.next_start} s</div>
+            <div className="timestamp" style={{ visibility: realtimeSubtitle.next_start && realtimeSubtitle.next_start >= realtimeSubtitle.end ? 'visible' : 'hidden' }}>Next start: {realtimeSubtitle.next_start ? realtimeSubtitle.next_start.toFixed(1) : ''} s</div>
           </React.Fragment>
         )
       } else {
@@ -96,10 +96,10 @@ export const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_Next
                 multiline
                 onKeyDown={(event) => {
                 if (
-                    event.key == 'Escape' ||
-                    (event.shiftKey && event.key == 'ArrowDown') || 
+                    event.key === 'Escape' ||
+                    (event.shiftKey && event.key === 'ArrowDown') || 
                     (event.ctrlKey && event.key  === 'ArrowDown') || 
-                    (event.ctrlKey && event.key == 'ArrowLeft') ||
+                    (event.ctrlKey && event.key === 'ArrowLeft') ||
                     (event.ctrlKey && event.key  === 'ArrowRight') ||
                     (event.ctrlKey && event.key  === 'ArrowUp') ||
                     (!event.shiftKey && event.key  === 'Enter') ||

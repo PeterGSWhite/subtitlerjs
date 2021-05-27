@@ -66,15 +66,47 @@ export const Player = ({playerRef, setVideoStatus, onProgress, onEnded, currentS
       </div>
   } else if(hotkeyMode === 2) {
     hotkeyHint = 
-    <div className="hotkeyhints">
+      <div className="hotkeyhints">
         <div className="hint">
           <Key icon="Esc"/>
           <div className="hint-text">Nav mode</div>
         </div>
-        <div className="hint">
-          <Key icon="eggg"/>
-          <div className="hint-text">some kind of edit thing</div>
+        <span className="multikeycontainer">
+          <div>
+            <Key icon="none"/>
+            <div className="hint-text">Move</div>
+          </div>
+          <div> </div>
+          <div>
+            <Key icon="Ctrl"/>
+            <div className="hint-text">Extend</div>
+          </div>
+          <div> </div>
+          <div>
+            <Key icon="Shift"/>
+            <div className="hint-text">Shrink</div>
+          </div>
+        </span>
+        <span className="multikeycontainer">
+        <div>
+          <Key icon="J"/>
+          <div className="hint-text">Back 1s</div>
         </div>
+        <div>
+          <Key icon="L"/>
+          <div className="hint-text">Foward 1s</div>
+        </div>
+        </span>
+        <span className="multikeycontainer">
+          <div>
+            <Key icon="<"/>
+            <div className="hint-text">Back 0.1s</div>
+          </div>
+          <div>
+            <Key icon=">"/>
+            <div className="hint-text">Forward 0.1s</div>
+          </div>
+        </span>
       </div>
     
     

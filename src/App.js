@@ -29,6 +29,7 @@ function App() {
   const [playbackRate, setPlaybackRate] = useState(1)
   const [hotkeyMode, setHotkeyMode] = useState(1)
   const [AP, setAP] = useState(false)
+  const [hasLoopedOnce, setHasLoopedOnce] = useState(false)
 
   // get start of subtitles
   const firstSub = useSelector((state) => selectSubtitleByIndex(state, 0))
@@ -47,7 +48,10 @@ function App() {
     // set playing true
     playerRef.current.seekTo(firstSub.start)
     setAP(true)
-    setHotkeyMode(0)
+    if(!hasLoopedOnce) {  
+      setHotkeyMode(0)
+      setHasLoopedOnce(true)
+    }
     setPlaying(true)
   }
 
