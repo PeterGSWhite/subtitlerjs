@@ -258,12 +258,12 @@ export const SubtitleList = ({
   }, [hotkeyMode, userReady]);
   // Insert with start and end times
   const insertSubtitle = (start, end) => {
-      console.log(current.end, minSubSize, -minSubSize + minSubSize)
-      if(current.end !== undefined || start < current.end + minSubSize) {
+      if(current.end !== undefined && start < current.end + minSubSize) {
         return
       }
       let default_start = Math.max(start, 0)
       let default_end = end
+      console.log(default_start, default_end)
       // Case 0: user inserts first subtitle
       if(current.id === 'emptypos') {
         dispatch(addSubtitle({
@@ -325,7 +325,8 @@ export const SubtitleList = ({
   }
 
   // Extend up
-  useHotkeys('control+j, control+,', (e) => {
+  useHotkeys('shift+j, shift+,', (e) => {
+    console.log(e)
     e.preventDefault()
     if(hotkeyMode == 2  && userReady) {
       let extensionAmount
@@ -344,7 +345,6 @@ export const SubtitleList = ({
           id: prev.id,
           changes: {next_start: newStart}
         }))
-        setPlayhead(newStart)
       }
     }
   }, [hotkeyMode, userReady , current, prev]);
@@ -368,21 +368,21 @@ export const SubtitleList = ({
           id: next.id,
           changes: {prev_end: newEnd}
         }))
-        setPlayhead(newEnd - 0.25)
       }
     }
   }, [hotkeyMode, userReady , current, next]);
   // Shrink down
-  useHotkeys('shift+l, shift+.', (e) => {
+  useHotkeys('L, >', (e) => { 
+    console.log(e)
     e.preventDefault()
     if(hotkeyMode == 2  && userReady) {
       let extensionAmount
-      if(e.key === 'l') {
+      if(e.key === 'L') {
         extensionAmount = 1
-      } else if(e.key === '.') {
+      } else if(e.key === '>') {
         extensionAmount = 0.1
       }
-      let newStart = Math.max(current.start + extensionAmount, current.end - 0.25); // MIN SUB SIZE !?!?!?!
+      let newStart = Math.min(current.start + extensionAmount, current.end - 0.25); // MIN SUB SIZE !?!?!?!
       if(current.start - newStart) {
         dispatch(updateSubtitle({
           id: current.id,
@@ -392,13 +392,12 @@ export const SubtitleList = ({
           id: prev.id,
           changes: {next_start: newStart}
         }))
-        setPlayhead(newStart)
       }
       
     }
   }, [hotkeyMode, userReady , current, prev]);
   // Shrink up
-  useHotkeys('shift+j, shift+,', (e) => {
+  useHotkeys('control+j, control+,', (e) => {
     e.preventDefault()
     if(hotkeyMode == 2  && userReady) {
       let extensionAmount
@@ -407,7 +406,7 @@ export const SubtitleList = ({
       } else if(e.key === ',') {
         extensionAmount = 0.1
       }
-      let newEnd = Math.min(current.end - extensionAmount, current.start + 0.25);
+      let newEnd = Math.max(current.end - extensionAmount, current.start + 0.25);
       if(newEnd - current.end) {
         dispatch(updateSubtitle({
           id: current.id,
@@ -417,7 +416,6 @@ export const SubtitleList = ({
           id: next.id,
           changes: {prev_end: newEnd}
         }))
-        setPlayhead(newEnd - 0.25)
       }
     }
   }, [hotkeyMode, userReady , current, next]);
@@ -449,7 +447,6 @@ export const SubtitleList = ({
         id: next.id,
         changes: {prev_end: newEnd}
       }))
-      setPlayhead(newStart)
     }
   }, [hotkeyMode, userReady , current, prev, next]);
   // Move down
@@ -480,7 +477,6 @@ export const SubtitleList = ({
         id: next.id,
         changes: {prev_end: newEnd}
       }))
-      setPlayhead(newEnd - 0.25)
     }
   }, [hotkeyMode, userReady , current, prev, next]);
 
@@ -595,7 +591,7 @@ export const SubtitleList = ({
 
   useInterval(() => {
     if(userReady) {     
-      let savedProgress = generateSRT('//')
+      let savedProgress = generateSRT('//', false)
       if(savedProgress) {
         document.cookie = `saved_progress=${savedProgress};max-age=604800`
       }
@@ -623,12 +619,12 @@ export const SubtitleList = ({
     let h = ("0" +Math.floor(seconds/3600)).slice(-2);
     return h + ':' + m + ':' + s + ',' + ms
   }
-  const generateSRT = (joinwith='\n') => {
+  const generateSRT = (joinwith='\n', ignore_empty=true) => {
     console.log(subtitles.length)
     let outputlines = []
     let index = 1
     subtitles.forEach((subtitle) => {
-      if(subtitle.text) {
+      if(!ignore_empty || subtitle.text) {
         outputlines.push(index)
         outputlines.push(secondsToTime(subtitle.start) + ' --> ' + secondsToTime(subtitle.end))
         outputlines.push(subtitle.text)

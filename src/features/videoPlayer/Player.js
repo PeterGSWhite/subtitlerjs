@@ -76,15 +76,15 @@ export const Player = ({playerRef, setVideoStatus, onProgress, onEnded, currentS
             <Key icon="none"/>
             <div className="hint-text">Move</div>
           </div>
-          <div> </div>
-          <div>
-            <Key icon="Ctrl"/>
-            <div className="hint-text">Extend</div>
-          </div>
-          <div> </div>
+          <div> </div> <div> </div> <div> </div>
           <div>
             <Key icon="Shift"/>
-            <div className="hint-text">Shrink</div>
+            <div className="hint-text">Edit start</div>
+          </div>
+          <div> </div> <div> </div> <div> </div>
+          <div>
+            <Key icon="Ctrl"/>
+            <div className="hint-text">Edit end</div>
           </div>
         </span>
         <span className="multikeycontainer">
@@ -92,6 +92,7 @@ export const Player = ({playerRef, setVideoStatus, onProgress, onEnded, currentS
           <Key icon="J"/>
           <div className="hint-text">Back 1s</div>
         </div>
+        <div> </div><div> </div>
         <div>
           <Key icon="L"/>
           <div className="hint-text">Foward 1s</div>
@@ -102,6 +103,7 @@ export const Player = ({playerRef, setVideoStatus, onProgress, onEnded, currentS
             <Key icon="<"/>
             <div className="hint-text">Back 0.1s</div>
           </div>
+          <div> </div><div> </div>
           <div>
             <Key icon=">"/>
             <div className="hint-text">Forward 0.1s</div>
