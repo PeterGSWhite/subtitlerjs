@@ -258,7 +258,8 @@ export const SubtitleList = ({
   }, [hotkeyMode, userReady]);
   // Insert with start and end times
   const insertSubtitle = (start, end) => {
-      if(start < (current.end|-minSubSize) + minSubSize) {
+      console.log(current.end, minSubSize, -minSubSize + minSubSize)
+      if(current.end !== undefined || start < current.end + minSubSize) {
         return
       }
       let default_start = Math.max(start, 0)
