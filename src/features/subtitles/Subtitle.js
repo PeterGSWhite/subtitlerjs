@@ -8,7 +8,7 @@ import {
     updateSubtitle,
   } from './subtitlesSlice'
 
-export const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, setCurrentSeconds, hotkeyMode, handleInsertHotkey }) => {
+export const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_NextStart, setCurrentSeconds, hotkeyMode, handleInsertHotkey, index }) => {
     const dispatch = useDispatch()
     const subtitle = useSelector((state) => selectSubtitleById(state, subtitleId))
   
@@ -45,15 +45,20 @@ export const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_Next
       if(hotkeyMode === 1 || !selected) {
         return (
           <React.Fragment>
-            <div 
-              className={`subtitle ${selected ? 'selected' : ''}`}
-              onClick={handlePlayClick} 
-            >
-              <div className="subtitle-play">
-                <i className="fa fa-play-circle"></i>
+            <span className="subtitle-container">
+              <div className="subtitle-index">
+                  {index}
               </div>
-              <div className="subtitle-text">{realtimeSubtitle.text}</div>
-            </div>
+              <div 
+                className={`subtitle ${selected ? 'selected' : ''}`}
+                onClick={handlePlayClick} 
+              >
+                <div className="subtitle-play">
+                  <i className="fa fa-play-circle"></i>
+                </div>
+                <div className="subtitle-text">{realtimeSubtitle.text}</div>
+              </div>
+            </span>
             <div className={`gap`} style={{ height: gap }}></div>
           </React.Fragment>
         )
@@ -65,15 +70,17 @@ export const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_Next
               <div className="gap" style={{ height: Math.min(Math.max((realtimeSubtitle.start-realtimeSubtitle.prev_end), 0.1), 50) + 'px' }}></div>
             </span>
             <div className="timestamp">Starts: {realtimeSubtitle.start.toFixed(1)} s</div>
-            <div 
-              className={`subtitle ${selected ? 'selected' : ''}`}
-              onClick={handlePlayClick} 
-            >
-              <div className="subtitle-play">
-                <i className="fa fa-play-circle"></i>
+            <span className="subtitle-container">
+              <div className="subtitle-index">
+                  {index}
               </div>
-              <div className="subtitle-text">{realtimeSubtitle.text}</div>
-            </div>
+              <div 
+                className={`subtitle ${selected ? 'selected' : ''}`}
+                onClick={handlePlayClick} 
+              >
+                <div className="subtitle-text">{realtimeSubtitle.text}</div>
+              </div>
+            </span>
             <div className="timestamp">Ends: {realtimeSubtitle.end.toFixed(1)} s</div>
             <div className="gap" style={{ height: gap }}></div>
             <div className="timestamp" style={{ visibility: realtimeSubtitle.next_start && realtimeSubtitle.next_start >= realtimeSubtitle.end ? 'visible' : 'hidden' }}>Next start: {realtimeSubtitle.next_start ? realtimeSubtitle.next_start.toFixed(1) : ''} s</div>
@@ -82,33 +89,38 @@ export const Subtitle = ({ subtitleId, playerRef, isCurrent_AllData, isPrev_Next
       } else {
         return (
           <React.Fragment>
-            <div 
-              className={`subtitle ${selected ? 'selected' : ''}`}
-            >
-              <TextField 
-                InputProps={{ style: {  color: 'white'}}} 
-                className="selected-input"
-                label="Edit subtitle" 
-                value={realtimeSubtitle.text} 
-                onChange={handleTextChange}
-                autoFocus
-                fullWidth
-                multiline
-                onKeyDown={(event) => {
-                if (
-                    event.key === 'Escape' ||
-                    (event.shiftKey && event.key === 'ArrowDown') || 
-                    (event.ctrlKey && event.key  === 'ArrowDown') || 
-                    (event.ctrlKey && event.key === 'ArrowLeft') ||
-                    (event.ctrlKey && event.key  === 'ArrowRight') ||
-                    (event.ctrlKey && event.key  === 'ArrowUp') ||
-                    (!event.shiftKey && event.key  === 'Enter') ||
-                    (event.key  === 'Delete')
-                )
-                handleInsertHotkey(event)
-                }}
-              />
-            </div>
+            <span className="subtitle-container">
+              <div className="subtitle-index">
+                  {index}
+              </div>
+              <div 
+                className={`subtitle ${selected ? 'selected' : ''}`}
+              >
+                <TextField 
+                  InputProps={{ style: {  color: 'white'}}} 
+                  className="selected-input"
+                  label="Edit subtitle" 
+                  value={realtimeSubtitle.text} 
+                  onChange={handleTextChange}
+                  autoFocus
+                  fullWidth
+                  multiline
+                  onKeyDown={(event) => {
+                  if (
+                      event.key === 'Escape' ||
+                      (event.shiftKey && event.key === 'ArrowDown') || 
+                      (event.ctrlKey && event.key  === 'ArrowDown') || 
+                      (event.ctrlKey && event.key === 'ArrowLeft') ||
+                      (event.ctrlKey && event.key  === 'ArrowRight') ||
+                      (event.ctrlKey && event.key  === 'ArrowUp') ||
+                      (!event.shiftKey && event.key  === 'Enter') ||
+                      (event.key  === 'Delete')
+                  )
+                  handleInsertHotkey(event)
+                  }}
+                />
+              </div>
+            </span>
             <div className={`gap`} style={{ height: gap }}></div>
           </React.Fragment>
       )

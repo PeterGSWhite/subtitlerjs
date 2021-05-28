@@ -258,12 +258,13 @@ export const SubtitleList = ({
   }, [hotkeyMode, userReady]);
   // Insert with start and end times
   const insertSubtitle = (start, end) => {
+    console.log('insertSubtitle(', start, ',', end, ')', 'current:', current)
       if(current.end !== undefined && start < current.end + minSubSize) {
         return
       }
       let default_start = Math.max(start, 0)
       let default_end = end
-      console.log(default_start, default_end)
+      console.log('inserting with: ', default_start, default_end)
       // Case 0: user inserts first subtitle
       if(current.id === 'emptypos') {
         dispatch(addSubtitle({
@@ -335,7 +336,7 @@ export const SubtitleList = ({
       } else if(e.key === '<') {
         extensionAmount = 0.1
       }
-      let newStart = Math.max(current.start - extensionAmount, current.prev_end, 0);
+      let newStart = prev.id === 'firstpos' ? Math.max(current.start - extensionAmount, 0) : Math.max(current.start - extensionAmount, prev.end);
 
       if(current.start - newStart) {
         dispatch(updateSubtitle({
@@ -360,7 +361,8 @@ export const SubtitleList = ({
       } else if(e.key === '.') {
         extensionAmount = 0.1
       }
-      let newEnd = Math.min(current.end + extensionAmount, next.start);
+      let newEnd = next.id === 'lastpos' ? Math.min(current.end + extensionAmount, playerRef.current.getDuration()) : Math.min(current.end + extensionAmount, next.start);
+
       if(newEnd - current.end) {
         dispatch(updateSubtitle({
           id: current.id,
@@ -432,7 +434,8 @@ export const SubtitleList = ({
       } else if(e.key === ',') {
         extensionAmount = 0.1
       }
-      let newStart = Math.max(current.start - extensionAmount, prev.end);
+      
+      let newStart = prev.id === 'firstpos' ? Math.max(current.start - extensionAmount, 0) : Math.max(current.start - extensionAmount, prev.end);
       let startDiff = current.start - newStart
       let newEnd = current.end - startDiff
       dispatch(updateSubtitle({
@@ -450,8 +453,11 @@ export const SubtitleList = ({
         id: next.id,
         changes: {prev_end: newEnd}
       }))
+      if(currentSeconds > newEnd) {
+        setCurrentSeconds(newEnd - 0.3)
+      }
     }
-  }, [hotkeyMode, userReady , current, prev, next]);
+  }, [hotkeyMode, userReady , current, prev, next, currentSeconds]);
   // Move down
   useHotkeys('l, .', (e) => {
     e.preventDefault()
@@ -462,7 +468,7 @@ export const SubtitleList = ({
       } else if(e.key === '.') {
         extensionAmount = 0.1
       }
-      let newEnd = Math.min(current.end + extensionAmount, next.start);
+      let newEnd = next.id === 'lastpos' ? Math.min(current.end + extensionAmount, playerRef.current.getDuration()) : Math.min(current.end + extensionAmount, next.start);
       let endDiff = newEnd - current.end
       let newStart = current.start + endDiff
       dispatch(updateSubtitle({
@@ -480,8 +486,11 @@ export const SubtitleList = ({
         id: next.id,
         changes: {prev_end: newEnd}
       }))
+      if(currentSeconds < newStart) {
+        setCurrentSeconds(newStart)
+      }
     }
-  }, [hotkeyMode, userReady , current, prev, next]);
+  }, [hotkeyMode, userReady, current, prev, next, currentSeconds, playerRef]);
 
   // Video controls
   useHotkeys('m', (e) => {
@@ -655,7 +664,7 @@ export const SubtitleList = ({
   // Subtitles
   let content
   if (subtitleIds.length) {
-    content = subtitleIds.map((subtitleId) => (
+    content = subtitleIds.map((subtitleId, index) => (
       <Subtitle 
         key={subtitleId} 
         subtitleId={subtitleId} 
@@ -666,6 +675,7 @@ export const SubtitleList = ({
         setCurrentSeconds={setCurrentSeconds} 
         hotkeyMode={hotkeyMode} 
         handleInsertHotkey={handleInsertHotkey}
+        index={index}
       />
     ))
   } else {
