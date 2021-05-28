@@ -84,11 +84,8 @@ export const SubtitleList = ({
     
   }
 
-  // Insert Delete && Alter Timestamps (maybe allow them to 'eat' into adjacents, up to the boundary of the next adjacent?)
-  const paddingSeconds = 0
-  const defaultSubSize = 3
+  // Insert Delete && Alter Timestamps
   const minSubSize = 0.3
-  const maxSubSize = 500
   const reactionTime = 0.25
   const [pressedRecordEpoch, setPressedRecordEpoch] = useState(0)
   // Stepin
@@ -618,7 +615,8 @@ export const SubtitleList = ({
     let srt_file = document.cookie
                   .split('; ')
                   .find(row => row.startsWith('saved_progress'))
-                  .split('=')[1].replace('//', '\n')
+                  .split('=')[1].replaceAll('\/\/', '\n')
+    console.log(srt_file)
     dispatch(initFromFile(srt_file))
     handleUserReady()
   }

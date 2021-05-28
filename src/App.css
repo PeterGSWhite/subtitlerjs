@@ -172,10 +172,6 @@
 
 .subtitle-container {
   width: 100%;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  word-break: break-all;
-  word-break: break-word;
   hyphens: auto;
   background-color: rgb(53, 46, 46);
   color: white;
