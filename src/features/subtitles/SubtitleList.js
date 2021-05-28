@@ -323,14 +323,14 @@ export const SubtitleList = ({
   }
 
   // Extend up
-  useHotkeys('shift+j, shift+,', (e) => {
+  useHotkeys('alt+j, alt+,', (e) => {
     console.log(e)
     e.preventDefault()
     if(hotkeyMode == 2  && userReady) {
       let extensionAmount
-      if(e.key === 'J') {
+      if(e.key === 'j') {
         extensionAmount = 1
-      } else if(e.key === '<') {
+      } else if(e.key === ',') {
         extensionAmount = 0.1
       }
       let newStart = prev.id === 'firstpos' ? Math.max(current.start - extensionAmount, 0) : Math.max(current.start - extensionAmount, prev.end);
@@ -373,14 +373,14 @@ export const SubtitleList = ({
     }
   }, [hotkeyMode, userReady , current, next]);
   // Shrink down
-  useHotkeys('shift+l, shift+.', (e) => { 
+  useHotkeys('alt+l, alt+.', (e) => { 
     console.log(e)
     e.preventDefault()
     if(hotkeyMode == 2  && userReady) {
       let extensionAmount
-      if(e.key === 'L') {
+      if(e.key === 'l') {
         extensionAmount = 1
-      } else if(e.key === '>') {
+      } else if(e.key === '.') {
         extensionAmount = 0.1
       }
       let newStart = Math.min(current.start + extensionAmount, current.end - 0.25); // MIN SUB SIZE !?!?!?!

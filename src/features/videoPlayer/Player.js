@@ -78,7 +78,7 @@ export const Player = ({playerRef, setVideoStatus, onProgress, onEnded, currentS
           </div>
           <div> </div> <div> </div> <div> </div>
           <div>
-            <Key icon="Shift"/>
+            <Key icon="Alt"/>
             <div className="hint-text">Edit start</div>
           </div>
           <div> </div> <div> </div> <div> </div>
