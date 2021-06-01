@@ -698,10 +698,6 @@ export const SubtitleList = ({
             <span>Auto Pause</span><br/>
             <Switch onChange={handleToggleAP} checked={AP} />
           </div>
-          <div className="option option-edit">
-            <span>Edit</span><br/>
-            <i className="fa fa-edit"></i>
-          </div>
           <div className="option option-delete" onClick={handleDeleteSubtitle}>
             <span>Delete</span><br/>
             <i className="fa fa-trash"></i>
@@ -782,10 +778,6 @@ export const SubtitleList = ({
           <div className="welcome-gap"></div>
           <div className="welcome-message">
             <div>4: Download the .SRT file to use in your editing software of choice</div>
-          </div>
-          <div className="welcome-gap"></div>
-          <div className="welcome-message">
-            <div>5: YOUR PROGRESS WON'T BE SAVED IF YOU NAVIGATE AWAY FROM THE SITE - make sure you download the .SRT if you plan to continue where you left off</div>
           </div>
         </div>
       </section>
